@@ -18,7 +18,8 @@
 
   // Mode penyimpanan: server API (SQLite) jika ada; jika tidak ada (hosting statis seperti GitHub Pages/Netlify),
   // otomatis pindah ke LocalApi (localStorage di browser). Pilihan diingat selama halaman terbuka.
-  let useLocal = false;
+  // Hosting statis (GitHub Pages, file://) tidak punya server API: langsung pakai penyimpanan lokal tanpa memanggil /api.
+  let useLocal = /(^|\.)github\.io$/.test(location.hostname) || location.protocol === 'file:';
 
   async function api(method, url, body) {
     if (useLocal && window.LocalApi) return window.LocalApi.handle(method, url, body);
@@ -287,13 +288,15 @@
   // ---------- Papan Juara ----------
   async function openHighscore() {
     say('');
-    let d = await api('GET', '/api/highscores');
+    let d;
     let online = false;
-    // Utamakan papan bersama; jika offline atau belum dikonfigurasi, tampilkan skor di HP ini.
+    // Utamakan papan bersama (Firebase). Hanya jika tidak tersedia, pakai API server lokal atau skor di HP ini.
     const shared = window.Scores ? await window.Scores.top('math-hero', 'mh1', 10) : null;
     if (shared) {
       online = true;
       d = { scores: shared.map((r) => ({ nama: r.name, skor: r.score, area: r.meta.area || 1, hasil: r.meta.hasil || 'kalah', hero: r.meta.hero || null })) };
+    } else {
+      d = await api('GET', '/api/highscores');
     }
     const list = $('hs-list');
     list.innerHTML = '';
