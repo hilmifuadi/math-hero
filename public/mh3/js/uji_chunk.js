@@ -18,6 +18,16 @@
     { id: 'menara_gergaji', nama: 'Menara gergaji', info: 'Menara dua tuas dengan gergaji di dasar' },
     { id: 'tuas_silang_naik', nama: 'Tuas silang naik', info: 'Tuas silang, lalu naik tangga ke tujuan' },
     { id: 'sumur_ceruk_ganda', nama: 'Sumur dua ceruk', info: 'Turun tangga, dua ceruk tuas, gergaji di dasar' },
+    { id: 'menara_per', nama: 'Menara per', info: 'Menara dua tuas, naik ke tuas 1 lewat per' },
+    { id: 'menara_pipa', nama: 'Menara pipa', info: 'Menara dua tuas, naik ke tuas 1 lewat pipa' },
+    { id: 'menara_lift', nama: 'Menara lift', info: 'Menara dua tuas, naik ke tuas 1 lewat lift' },
+    { id: 'lift_jembatan', nama: 'Lift + jembatan', info: 'Tuas di dasar, naik lift, seberangi jembatan' },
+    { id: 'kotak_menara', nama: 'Kotak + menara', info: 'Kotak ke tombol, tangga naik, tuas, keluar atas' },
+    { id: 'saklar_naik', nama: 'Tangga saklar', info: 'Tuas memunculkan anak tangga di dinding' },
+    { id: 'gerak_tinggi', nama: 'Gerak bertingkat', info: 'Dua platform gerak, rendah lalu tinggi' },
+    { id: 'rapuh_tangga', nama: 'Tangga rapuh', info: 'Naik lewat papan rapuh yang runtuh' },
+    { id: 'samping_dua', nama: 'Lontar samping ganda', info: 'Dua lontaran samping, lewat pulau tengah' },
+    { id: 'gergaji_tiga', nama: 'Tiga gergaji', info: 'Lompati tiga gergaji berderet' },
   ];
   let withQuiz = false;
 

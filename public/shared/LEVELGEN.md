@@ -196,4 +196,14 @@ Opsi `fixed: ['id', ...]` merangkai hanya ruang itu (dipakai halaman uji).
 | `menara_gergaji` | seperti menara_dua_tuas | Gergaji diam di dasar sebelum tangga (harus dilompati). |
 | `tuas_silang_naik` | tuas, tangga, saklar (vertikal) | Seperti tuas_silang, lalu tangga naik ke tujuan di atas. |
 | `sumur_ceruk_ganda` | tuas, tangga, gergaji (turun 16 baris) | Turun tangga, dua ceruk tuas (satu per gerbang), gergaji di dasar sumur. |
+| `menara_per` | seperti menara_dua_tuas | Akses ke tuas 1 lewat per (pegas) ke ceruk atas. |
+| `menara_pipa` | tuas, saklar, pipa | Menara dua tuas; naik ke tuas 2 lewat pipa di balik gerbang (bukan tangga). |
+| `menara_lift` | seperti menara_dua_tuas | Akses ke tuas 1 lewat lift tegak. |
+| `lift_jembatan` | tuas, saklar, lift | Tuas di dasar memunculkan jembatan di atas, naik lift, seberangi jurang 12 petak. |
+| `kotak_menara` | kotak, tuas, tangga | Kotak ke lubang tombol (gerbang 1), tangga naik, tuas (gerbang 2), keluar di atas. |
+| `saklar_naik` | tuas, saklar | Tuas di dasar memunculkan anak tangga di dinding; jarak 4 baris (perlu lompat ganda) dan tidak bisa dilewati tanpa tuas. |
+| `gerak_tinggi` | gerak | Dua platform gerak bertingkat, rendah lalu tinggi. |
+| `rapuh_tangga` | rapuh | Tangga papan rapuh naik 12 baris. |
+| `samping_dua` | samping | Dua lontaran samping beruntun lewat pulau tengah. |
+| `gergaji_tiga` | gergaji | Tiga gergaji diam berderet. |
 
