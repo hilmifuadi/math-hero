@@ -20,7 +20,7 @@
 })(typeof self !== 'undefined' ? self : this, function (Physics) {
   const { C, T, stepBody, overlap } = Physics;
   const HEARTS = 3, INVULN = 1.4, RESPAWN_FALL = 140;
-  const SPRING = -1000, DASH = 470, DASH_T = 0.6, DASH_VY = -520, CLIMB = 150, PUSH = 105, MOVER = 70, LIFT = 64;
+  const SPRING = -1000, DASH = 470, DASH_T = 0.8, DASH_VY = -700, CLIMB = 150, PUSH = 105, MOVER = 70, LIFT = 64;
   const CRUMBLE_SHAKE = 0.5, CRUMBLE_BACK = 3, PIPE_SPEED = 520;
   // Lompat ganda selalu ada (seperti MH1). Kekuatan super dari Peti Kekuatan: meluncur (tahan Lompat setelah lompat
   // ganda), magnet bintang, perisai (pulih sendiri SHIELD_BACK detik setelah menahan pukulan).

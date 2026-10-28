@@ -30,7 +30,7 @@ punya platform gerak, papan rapuh, gergaji, meriam, dan gerbang; fisikanya (`sha
 |---|---|---|---|
 | `H` | Tangga | Lompat ke tangga lalu tahan Lompat (atau panah atas di keyboard) untuk memanjat; diam = berpegangan; panah kiri/kanan + Lompat = loncat keluar. `H` paling atas sebaris dengan lantai atas dan bisa dipijak; panah bawah untuk turun. Musuh tidak memanjat. | Animasi `*_climb` hero; batang tangga digambar dengan warna kayu tema. |
 | `s` | Per (pegas) | Diinjak: melontar setinggi sekitar 8 tile (2x lompat biasa). | `trap1` (pad merah yang tertekan). |
-| `>` `<` | Per samping | Melontar mendatar, untuk lintasan cepat gaya Sonic. | `trap1` diputar. |
+| `>` `<` | Per samping | Melontar mendatar, untuk lintasan cepat gaya Sonic. Tanpa lompat mendarat sekitar 11,6 tile dari pelontar (lompat ganda maksimal sekitar 8,4 tile), puncak busur sekitar 4,3 tile. | `trap1` diputar. |
 | `(` `)` | Pipa | Masuk di mulut `(`, hero dibawa ke mulut `)` pasangannya (pasangan ke-k menurut urutan kolom), keluar dengan loncatan kecil. | Tile pipa digambar dari palet logam `tileset`. |
 | `-` `\|` | Platform gerak (datar, tegak) | Deretan `-` = lintasan platform 2 tile, deretan `\|` = lintasan lift selebar 2 tile. Hero ikut terbawa. | Papan dari `tileset` (sudah dipakai MH1). |
 | `~` | Papan rapuh | Runtuh 0,6 detik setelah diinjak, muncul lagi 3 detik kemudian. | `trap5` (animasi runtuh). |
@@ -204,6 +204,6 @@ Opsi `fixed: ['id', ...]` merangkai hanya ruang itu (dipakai halaman uji).
 | `saklar_naik` | tuas, saklar | Tuas di dasar memunculkan anak tangga di dinding; jarak 4 baris (perlu lompat ganda) dan tidak bisa dilewati tanpa tuas. |
 | `gerak_tinggi` | gerak | Dua platform gerak bertingkat, rendah lalu tinggi. |
 | `rapuh_tangga` | rapuh | Tangga papan rapuh naik 12 baris. |
-| `samping_dua` | samping | Dua lontaran samping beruntun lewat pulau tengah. |
+| `samping_dua` | samping | Dua lontaran samping beruntun lewat pulau tengah; celah 10 tile, hanya lontaran yang menyeberang. |
 | `gergaji_tiga` | gergaji | Tiga gergaji diam berderet. |
 
