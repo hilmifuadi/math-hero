@@ -1,25 +1,13 @@
-// Math Hero 3: halaman uji ruang kombinasi (buka mh3/?uji=1). Memilih satu ruang kombinasi dari pustaka level generator
-// (levelgen.chunks.js, bertanda kombo: true) dan memainkannya langsung: ruang awal, ruang itu, lalu tujuan.
+// Math Hero 3: halaman uji ruang kombinasi (buka mh3/?uji=1). Memilih satu ruang yang belum diuji dari pustaka level generator
+// (levelgen.chunks.js) dan memainkannya langsung: ruang awal, ruang itu, lalu tujuan.
 // Tidak menyentuh data permainan; menang atau keluar kembali ke daftar ini.
 (function () {
   const M = window.MH2;
   const Gen = window.MHKit && window.MHKit.levelgen;
   if (!M || !Gen) return;
   const ROWS = [
-    { id: 'tuas_ganda', nama: 'Tuas ganda', info: 'Tarik tuas 1 lalu tuas 2 untuk membuka dua gerbang' },
-    { id: 'kotak_tuas', nama: 'Tuas + kotak', info: 'Tuas buka gerbang, dorong kotak ke lubang tombol' },
-    { id: 'jembatan_dua', nama: 'Dua jembatan tuas', info: 'Tuas di awal dan di seberang memunculkan jembatan' },
-    { id: 'kotak_jembatan', nama: 'Kotak + jembatan', info: 'Kotak di lubang tombol memunculkan jembatan' },
-    { id: 'kotak_dua', nama: 'Dua kotak', info: 'Kotak pertama membuka kotak kedua' },
-    { id: 'menara_dua_tuas', nama: 'Menara dua tuas', info: 'Naik ke tuas, turun, naik tangga, jembatan (vertikal)' },
-    { id: 'tuas_silang', nama: 'Tuas silang', info: 'Nyalakan, naik tarik tuas 2, turun matikan tuas 1' },
-    { id: 'kotak_turun', nama: 'Kotak turun sumur', info: 'Kotak jatuh ke tombol, tangga turun ke ceruk tuas' },
-    { id: 'menara_rapuh', nama: 'Menara rapuh', info: 'Menara dua tuas dengan pijakan papan rapuh' },
-    { id: 'menara_gergaji', nama: 'Menara gergaji', info: 'Menara dua tuas dengan gergaji di dasar' },
-    { id: 'tuas_silang_naik', nama: 'Tuas silang naik', info: 'Tuas silang, lalu naik tangga ke tujuan' },
-    { id: 'sumur_ceruk_ganda', nama: 'Sumur dua ceruk', info: 'Turun tangga, dua ceruk tuas, gergaji di dasar' },
     { id: 'menara_per', nama: 'Menara per', info: 'Menara dua tuas, naik ke tuas 1 lewat per' },
-    { id: 'menara_pipa', nama: 'Menara pipa', info: 'Menara dua tuas, naik ke tuas 1 lewat pipa' },
+    { id: 'menara_pipa', nama: 'Menara pipa', info: 'Menara dua tuas, naik ke tuas 2 lewat pipa' },
     { id: 'menara_lift', nama: 'Menara lift', info: 'Menara dua tuas, naik ke tuas 1 lewat lift' },
     { id: 'lift_jembatan', nama: 'Lift + jembatan', info: 'Tuas di dasar, naik lift, seberangi jembatan' },
     { id: 'kotak_menara', nama: 'Kotak + menara', info: 'Kotak ke tombol, tangga naik, tuas, keluar atas' },
