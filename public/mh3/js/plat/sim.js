@@ -20,7 +20,7 @@
 })(typeof self !== 'undefined' ? self : this, function (Physics) {
   const { C, T, stepBody, overlap } = Physics;
   const HEARTS = 3, INVULN = 1.4, RESPAWN_FALL = 140;
-  const SPRING = -1000, DASH = 470, DASH_T = 0.6, DASH_VY = -520, CLIMB = 150, PUSH = 105, MOVER = 70, LIFT = 64;
+  const SPRING = -1000, DASH = 470, DASH_T = 0.8, DASH_VY = -700, CLIMB = 150, PUSH = 105, MOVER = 70, LIFT = 64;
   const CRUMBLE_SHAKE = 0.5, CRUMBLE_BACK = 3, PIPE_SPEED = 520;
   // Lompat ganda selalu ada (seperti MH1). Kekuatan super dari Peti Kekuatan: meluncur (tahan Lompat setelah lompat
   // ganda), magnet bintang, perisai (pulih sendiri SHIELD_BACK detik setelah menahan pukulan).
@@ -341,13 +341,21 @@
   function quizTouch(g, o, touch, what) {
     if (!touch) { o.asked = false; return false; }
     if (o.asked) return false;
-    o.asked = true; g.events.push({ type: 'quiz', what, id: o.id, ch: o.ch, x: o.x + o.w / 2, y: o.y });
+    for (const q of what === 'plate' ? plateRun(g, o) : [o]) q.asked = true;
+    g.events.push({ type: 'quiz', what, id: o.id, ch: o.ch, x: o.x + o.w / 2, y: o.y });
     return true;
+  }
+  // Tombol macet yang berderet rapat (zona pendaratan kotak) dihitung satu benda: satu soal membuka semuanya.
+  function plateRun(g, o) {
+    const run = [o];
+    for (let i = 0; i < run.length; i++) for (const q of g.L.plates) if (!run.includes(q) && q.stuck && q.ch === o.ch && q.y === o.y && Math.abs(q.x - run[i].x) <= T + 1) run.push(q);
+    return run;
   }
   // Soal selesai: tuas langsung menyala, tombol kembali bekerja biasa.
   function solveQuiz(g, what, id) {
     const o = (what === 'lever' ? g.L.levers : g.L.plates)[id];
     if (!o || !o.stuck) return;
+    if (what === 'plate') for (const q of plateRun(g, o)) q.stuck = false;
     o.stuck = false;
     if (what === 'lever') { o.on = true; g.events.push({ type: 'lever', ch: o.ch, x: o.x + o.w / 2, y: o.y }); }
     updateGates(g, false);

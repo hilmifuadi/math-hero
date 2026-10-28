@@ -30,7 +30,7 @@ punya platform gerak, papan rapuh, gergaji, meriam, dan gerbang; fisikanya (`sha
 |---|---|---|---|
 | `H` | Tangga | Lompat ke tangga lalu tahan Lompat (atau panah atas di keyboard) untuk memanjat; diam = berpegangan; panah kiri/kanan + Lompat = loncat keluar. `H` paling atas sebaris dengan lantai atas dan bisa dipijak; panah bawah untuk turun. Musuh tidak memanjat. | Animasi `*_climb` hero; batang tangga digambar dengan warna kayu tema. |
 | `s` | Per (pegas) | Diinjak: melontar setinggi sekitar 8 tile (2x lompat biasa). | `trap1` (pad merah yang tertekan). |
-| `>` `<` | Per samping | Melontar mendatar, untuk lintasan cepat gaya Sonic. | `trap1` diputar. |
+| `>` `<` | Per samping | Melontar mendatar, untuk lintasan cepat gaya Sonic. Tanpa lompat mendarat sekitar 11,6 tile dari pelontar (lompat ganda maksimal sekitar 8,4 tile), puncak busur sekitar 4,3 tile. | `trap1` diputar. |
 | `(` `)` | Pipa | Masuk di mulut `(`, hero dibawa ke mulut `)` pasangannya (pasangan ke-k menurut urutan kolom), keluar dengan loncatan kecil. | Tile pipa digambar dari palet logam `tileset`. |
 | `-` `\|` | Platform gerak (datar, tegak) | Deretan `-` = lintasan platform 2 tile, deretan `\|` = lintasan lift selebar 2 tile. Hero ikut terbawa. | Papan dari `tileset` (sudah dipakai MH1). |
 | `~` | Papan rapuh | Runtuh 0,6 detik setelah diinjak, muncul lagi 3 detik kemudian. | `trap5` (animasi runtuh). |
@@ -170,3 +170,40 @@ Seed acak hanya untuk mode tambahan nanti (misalnya "Kejar Bebas").
 | G5 | 8 level Kejar diganti, seed dipilih dan dikunci | `npm run test:mh3`, bot menamatkan 8 level, uji layar 393x851 |
 
 Dikerjakan di cabang yang sama dengan kit bersama, tanpa merge. Uji di ponsel asli tetap dianjurkan setelah G5.
+
+## 6. Ruang kombinasi (teka-teki) dan halaman uji
+
+Ruang tunggal hanya menguji satu mekanik (seperti tutorial). Ruang bertanda `kombo: true` di `levelgen.chunks.js` menggabungkan
+beberapa mekanik jadi teka-teki. Satu ruang boleh memakai dua kanal: kanal pertama `1 4 t _`, kanal kedua `2 5 y ,`
+(gerbang, blok saklar terbalik, tuas, tombol); generator memetakan keduanya ke warna berbeda. Benda macet (pemicu soal)
+hanya dipasang pada kanal pertama.
+
+Ruang bertanda `uji: true` tidak dipakai generator biasa (ikutkan dengan opsi `uji: true`). Semua ruang kombinasi di bawah
+sudah aktif (tier 2-3 untuk yang vertikal; peluang memilih ruang kombinasi `KOMBO` = 0, 0.3, 0.5, 0.6 per tier). Mainkan langsung lewat `http://localhost:8091/mh3/?uji=1` (daftar ruang, tombol "Semua ruang berurutan", dan saklar benda macet).
+Opsi `fixed: ['id', ...]` merangkai hanya ruang itu (dipakai halaman uji).
+
+| Ruang | Mekanik | Teka-teki |
+|---|---|---|
+| `tuas_ganda` | tuas, tuas | Tuas 1 buka gerbang 1, tuas 2 (di balik gerbang 1) buka gerbang 2. |
+| `kotak_tuas` | tuas, kotak, tombol | Tuas buka gerbang kotak; kotak didorong ke lubang tombol, gerbang kedua terbuka. |
+| `jembatan_dua` | tuas, saklar | Dua jurang 12 petak; tuas di awal dan tuas di seberang memunculkan jembatan masing-masing. |
+| `kotak_jembatan` | kotak, tombol, saklar | Kotak di lubang tombol memunculkan jembatan selama menekan. |
+| `kotak_dua` | kotak, tombol | Kotak 1 membuka gerbang tempat kotak 2 menunggu; kotak 2 membuka pintu keluar. |
+| `menara_dua_tuas` | tuas, tangga, saklar (vertikal, 18 baris) | Naik lewat pijakan ke tuas 1, turun: gerbang di dasar terbuka; masuk, naik tangga ke tuas 2 yang memasang jembatan ke tujuan. |
+| `tuas_silang` | tuas, tangga, saklar (vertikal) | Tuas 1 nyala membuka gerbang ruang atas tetapi menutup lorong dengan blok. Naik, tarik tuas 2, turun, matikan tuas 1, lewati lorong. |
+| `kotak_turun` | kotak, tombol, tuas, tangga (turun 13 baris) | Dorong kotak dari tepi ke dasar sumur (tombol, 3 petak lebar), turun tangga, singgah ke ceruk tuas, lewati dua gerbang. |
+| `menara_rapuh` | seperti menara_dua_tuas | Pijakan menuju tuas 1 berupa papan rapuh (harus bergerak cepat). |
+| `menara_gergaji` | seperti menara_dua_tuas | Gergaji diam di dasar sebelum tangga (harus dilompati). |
+| `tuas_silang_naik` | tuas, tangga, saklar (vertikal) | Seperti tuas_silang, lalu tangga naik ke tujuan di atas. |
+| `sumur_ceruk_ganda` | tuas, tangga, gergaji (turun 16 baris) | Turun tangga, dua ceruk tuas (satu per gerbang), gergaji di dasar sumur. |
+| `menara_per` | seperti menara_dua_tuas | Akses ke tuas 1 lewat per (pegas) ke ceruk atas. |
+| `menara_pipa` | tuas, saklar, pipa | Menara dua tuas; naik ke tuas 2 lewat pipa di balik gerbang (bukan tangga). |
+| `menara_lift` | seperti menara_dua_tuas | Akses ke tuas 1 lewat lift tegak. |
+| `lift_jembatan` | tuas, saklar, lift | Tuas di dasar memunculkan jembatan di atas, naik lift, seberangi jurang 12 petak. |
+| `kotak_menara` | kotak, tuas, tangga | Kotak ke lubang tombol (gerbang 1), tangga naik, tuas (gerbang 2), keluar di atas. |
+| `saklar_naik` | tuas, saklar | Tuas di dasar memunculkan anak tangga di dinding; jarak 4 baris (perlu lompat ganda) dan tidak bisa dilewati tanpa tuas. |
+| `gerak_tinggi` | gerak | Dua platform gerak bertingkat, rendah lalu tinggi. |
+| `rapuh_tangga` | rapuh | Tangga papan rapuh naik 12 baris. |
+| `samping_dua` | samping | Dua lontaran samping beruntun lewat pulau tengah; celah 10 tile, hanya lontaran yang menyeberang. |
+| `gergaji_tiga` | gergaji | Tiga gergaji diam berderet. |
+
