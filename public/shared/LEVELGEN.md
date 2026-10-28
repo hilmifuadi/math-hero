@@ -189,4 +189,6 @@ Opsi `fixed: ['id', ...]` merangkai hanya ruang itu (dipakai halaman uji).
 | `jembatan_dua` | tuas, saklar | Dua jurang 12 petak; tuas di awal dan tuas di seberang memunculkan jembatan masing-masing. |
 | `kotak_jembatan` | kotak, tombol, saklar | Kotak di lubang tombol memunculkan jembatan selama menekan. |
 | `kotak_dua` | kotak, tombol | Kotak 1 membuka gerbang tempat kotak 2 menunggu; kotak 2 membuka pintu keluar. |
-
+| `menara_dua_tuas` | tuas, tangga, saklar (vertikal, 18 baris) | Naik lewat pijakan ke tuas 1, turun: gerbang di dasar terbuka; masuk, naik tangga ke tuas 2 yang memasang jembatan ke tujuan. |
+| `tuas_silang` | tuas, tangga, saklar (vertikal) | Tuas 1 nyala membuka gerbang ruang atas tetapi menutup lorong dengan blok. Naik, tarik tuas 2, turun, matikan tuas 1, lewati lorong. |
+| `kotak_turun` | kotak, tombol, tuas, tangga (turun 13 baris) | Dorong kotak dari tepi ke dasar sumur (tombol, 3 petak lebar), turun tangga, singgah ke ceruk tuas, lewati dua gerbang. |

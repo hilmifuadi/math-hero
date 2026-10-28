@@ -11,6 +11,9 @@
     { id: 'jembatan_dua', nama: 'Dua jembatan tuas', info: 'Tuas di awal dan di seberang memunculkan jembatan' },
     { id: 'kotak_jembatan', nama: 'Kotak + jembatan', info: 'Kotak di lubang tombol memunculkan jembatan' },
     { id: 'kotak_dua', nama: 'Dua kotak', info: 'Kotak pertama membuka kotak kedua' },
+    { id: 'menara_dua_tuas', nama: 'Menara dua tuas', info: 'Naik ke tuas, turun, naik tangga, jembatan (vertikal)' },
+    { id: 'tuas_silang', nama: 'Tuas silang', info: 'Nyalakan, naik tarik tuas 2, turun matikan tuas 1' },
+    { id: 'kotak_turun', nama: 'Kotak turun sumur', info: 'Kotak jatuh ke tombol, tangga turun ke ceruk tuas' },
   ];
   let withQuiz = false;
 
