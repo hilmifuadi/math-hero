@@ -17,6 +17,7 @@
   const GATE = '123', GATE_INV = '456', LEVER = 'tyu', PLATE = '_,;', LEVER_Q = 'TYU', PLATE_Q = 'jkl';
   const VERT = [0.15, 0.3, 0.45, 0.6];      // porsi ruang naik/turun per tier
   const UP = [0.6, 0.6, 0.6, 0.8];          // dari ruang vertikal, porsi yang naik
+  const KOMBO = [0, 0.3, 0.5, 0.6];         // peluang memilih ruang kombinasi bila ada di kolam
 
   function rng(seed) {
     let a = (seed >>> 0) || 1;
@@ -131,6 +132,9 @@
     }
     if (!pool.length) pool = all.filter((ch) => (ch.dir || 'R') === 'R');
     if (!pool.length) pool = all.filter((ch) => ch.dir !== 'D' || st.y <= 2);
+    // Teka-teki (ruang kombinasi) diutamakan di tier tinggi; ruang tunggal hanya mengenalkan satu mekanik.
+    const combo = pool.filter((ch) => ch.kombo);
+    if (combo.length && R() < KOMBO[o.tier]) return R.pick(combo);
     return pool.length ? R.pick(pool) : null;
   }
 

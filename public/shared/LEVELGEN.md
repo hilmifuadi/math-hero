@@ -178,8 +178,8 @@ beberapa mekanik jadi teka-teki. Satu ruang boleh memakai dua kanal: kanal perta
 (gerbang, blok saklar terbalik, tuas, tombol); generator memetakan keduanya ke warna berbeda. Benda macet (pemicu soal)
 hanya dipasang pada kanal pertama.
 
-Ruang `uji: true` belum dipakai generator biasa (level yang sudah ada tidak berubah). Ikutkan dengan opsi `uji: true`, atau
-mainkan langsung lewat `http://localhost:8091/mh3/?uji=1` (daftar ruang, tombol "Semua ruang berurutan", dan saklar benda macet).
+Ruang bertanda `uji: true` tidak dipakai generator biasa (ikutkan dengan opsi `uji: true`). Semua ruang kombinasi di bawah
+sudah aktif (tier 2-3 untuk yang vertikal; peluang memilih ruang kombinasi `KOMBO` = 0, 0.3, 0.5, 0.6 per tier). Mainkan langsung lewat `http://localhost:8091/mh3/?uji=1` (daftar ruang, tombol "Semua ruang berurutan", dan saklar benda macet).
 Opsi `fixed: ['id', ...]` merangkai hanya ruang itu (dipakai halaman uji).
 
 | Ruang | Mekanik | Teka-teki |
@@ -192,3 +192,8 @@ Opsi `fixed: ['id', ...]` merangkai hanya ruang itu (dipakai halaman uji).
 | `menara_dua_tuas` | tuas, tangga, saklar (vertikal, 18 baris) | Naik lewat pijakan ke tuas 1, turun: gerbang di dasar terbuka; masuk, naik tangga ke tuas 2 yang memasang jembatan ke tujuan. |
 | `tuas_silang` | tuas, tangga, saklar (vertikal) | Tuas 1 nyala membuka gerbang ruang atas tetapi menutup lorong dengan blok. Naik, tarik tuas 2, turun, matikan tuas 1, lewati lorong. |
 | `kotak_turun` | kotak, tombol, tuas, tangga (turun 13 baris) | Dorong kotak dari tepi ke dasar sumur (tombol, 3 petak lebar), turun tangga, singgah ke ceruk tuas, lewati dua gerbang. |
+| `menara_rapuh` | seperti menara_dua_tuas | Pijakan menuju tuas 1 berupa papan rapuh (harus bergerak cepat). |
+| `menara_gergaji` | seperti menara_dua_tuas | Gergaji diam di dasar sebelum tangga (harus dilompati). |
+| `tuas_silang_naik` | tuas, tangga, saklar (vertikal) | Seperti tuas_silang, lalu tangga naik ke tujuan di atas. |
+| `sumur_ceruk_ganda` | tuas, tangga, gergaji (turun 16 baris) | Turun tangga, dua ceruk tuas (satu per gerbang), gergaji di dasar sumur. |
+

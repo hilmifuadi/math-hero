@@ -325,7 +325,7 @@
     // uji: true = belum dipakai generator biasa; hanya muncul di halaman uji (mh3/uji_chunk.html) atau bila opsi uji dinyalakan.
     // Kanal kedua dalam satu ruang: 2 gerbang, y tuas, ',' tombol, 5 blok saklar terbalik (kanal pertama: 1, t, _, 4).
     // Tuas A membuka gerbang A; dari situ tuas B membuka gerbang B. Dua tuas berurutan.
-    { id: 'tuas_ganda', kombo: true, uji: true, tags: ['tuas'], tier: [1, 3], inside: [[0, 2, 23, 5]], rows: [
+    { id: 'tuas_ganda', kombo: true, tags: ['tuas'], tier: [1, 3], inside: [[0, 2, 23, 5]], rows: [
       '########################',
       '########################',
       '.......1........2.......',
@@ -335,7 +335,7 @@
       '########################',
     ] },
     // Tarik tuas: gerbang terbuka. Dorong kotak ke lubang tombol: gerbang kedua terbuka (kotak mengisi lubang, jadi bisa dilewati).
-    { id: 'kotak_tuas', kombo: true, uji: true, tags: ['tuas', 'kotak'], tier: [1, 3], inside: [[0, 2, 25, 5]], rows: [
+    { id: 'kotak_tuas', kombo: true, tags: ['tuas', 'kotak'], tier: [1, 3], inside: [[0, 2, 25, 5]], rows: [
       '##########################',
       '##########################',
       '......1..............2....',
@@ -346,7 +346,7 @@
       '##########################',
     ] },
     // Dua jurang selebar 12. Tuas pertama memunculkan jembatan pertama, tuas kedua di seberang memunculkan jembatan kedua.
-    { id: 'jembatan_dua', kombo: true, uji: true, tags: ['tuas', 'saklar'], tier: [2, 3], rows: [
+    { id: 'jembatan_dua', kombo: true, tags: ['tuas', 'saklar'], tier: [2, 3], rows: [
       '..............................................',
       '..............................................',
       '..............................................',
@@ -357,7 +357,7 @@
       '######............##########............######',
     ] },
     // Dorong kotak ke lubang tombol: jembatan di jurang muncul selama kotak menekan tombol.
-    { id: 'kotak_jembatan', kombo: true, uji: true, tags: ['kotak', 'saklar'], tier: [2, 3], rows: [
+    { id: 'kotak_jembatan', kombo: true, tags: ['kotak', 'saklar'], tier: [2, 3], rows: [
       '..................................',
       '..................................',
       '..................................',
@@ -368,7 +368,7 @@
       '##############............########',
     ] },
     // Dua kotak, dua tombol: kotak pertama membuka gerbang tempat kotak kedua menunggu.
-    { id: 'kotak_dua', kombo: true, uji: true, tags: ['kotak'], tier: [1, 3], inside: [[0, 2, 33, 5]], rows: [
+    { id: 'kotak_dua', kombo: true, tags: ['kotak'], tier: [1, 3], inside: [[0, 2, 33, 5]], rows: [
       '##################################',
       '##################################',
       '............1..............2......',
@@ -381,7 +381,7 @@
 
     // ---------- teka-teki vertikal: jalur naik-turun, satu tindakan di atas mengubah keadaan di bawah ----------
     // Naik lewat pijakan ke tuas di pojok kiri atas, turun membuka gerbang, naik tangga ke tuas kedua yang memasang jembatan.
-    { id: 'menara_dua_tuas', kombo: true, uji: true, dir: 'U', tags: ['tuas', 'tangga', 'saklar'], tier: [2, 3], rows: [
+    { id: 'menara_dua_tuas', kombo: true, dir: 'U', tags: ['tuas', 'tangga', 'saklar'], tier: [2, 3], rows: [
       '.........##.................',
       '.........##.................',
       '.........##.................',
@@ -403,7 +403,7 @@
     ] },
     // Tuas 1 nyala: gerbang ruang atas terbuka, tetapi lorong tertutup blok. Naik, tarik tuas 2 (gerbang keluar), turun,
     // matikan tuas 1 (blok hilang), lalu lewati lorong. Urutan: nyala, tarik, matikan.
-    { id: 'tuas_silang', kombo: true, uji: true, tags: ['tuas', 'tangga', 'saklar'], tier: [2, 3], inside: [[7, 8, 27, 11], [8, 2, 14, 4]], rows: [
+    { id: 'tuas_silang', kombo: true, tags: ['tuas', 'tangga', 'saklar'], tier: [2, 3], inside: [[7, 8, 27, 11], [8, 2, 14, 4]], rows: [
       '.......#####################',
       '.......#####################',
       '.......1.......#############',
@@ -420,7 +420,7 @@
       '############################',
     ] },
     // Dorong kotak dari tepi: jatuh ke tombol di dasar sumur (gerbang 1). Tangga turun, singgah ke ceruk tuas (gerbang 2).
-    { id: 'kotak_turun', kombo: true, uji: true, dir: 'D', tags: ['tuas', 'tangga', 'kotak'], tier: [2, 3], inside: [[2, 8, 6, 9], [15, 13, 23, 15]], rows: [
+    { id: 'kotak_turun', kombo: true, dir: 'D', tags: ['tuas', 'tangga', 'kotak'], tier: [2, 3], inside: [[2, 8, 6, 9], [15, 13, 23, 15]], rows: [
       '...............#########',
       '...............#########',
       '.....B.........#########',
@@ -437,6 +437,89 @@
       '#H.............1...2....',
       '#H.*..*....*...1.*.2.*..',
       '#H......___....1...2....',
+      '########################',
+      '########################',
+    ] },
+
+    // Variasi puzzle vertikal: papan rapuh, gergaji, jalan keluar naik, dan sumur dengan dua ceruk tuas.
+    { id: 'menara_rapuh', kombo: true, dir: 'U', tags: ['tuas', 'tangga', 'saklar', 'rapuh'], tier: [2, 3], rows: [
+      '.........##.................',
+      '.........##.................',
+      '.........##.................',
+      '......t.*##.................',
+      '....=====##.......*..*..*...',
+      '.........##.y...............',
+      '..*......####H#555555555555#',
+      '.~~~.....##..H.............#',
+      '.........##..H.............#',
+      '......*..##..H.............#',
+      '.....~~~.##..H.............#',
+      '.........##..H.............#',
+      '...*.....##..H.............#',
+      '..===....11..H.............#',
+      '.........11.*H.............#',
+      '.........11..H.............#',
+      '############################',
+      '############################',
+    ] },
+    { id: 'menara_gergaji', kombo: true, dir: 'U', tags: ['tuas', 'tangga', 'saklar', 'gergaji'], tier: [2, 3], rows: [
+      '.........##.................',
+      '.........##.................',
+      '.........##.................',
+      '......t.*##.................',
+      '....=====##.......*..*..*...',
+      '.........##.y...............',
+      '..*......####H#555555555555#',
+      '.===.....##..H.............#',
+      '.........##..H.............#',
+      '......*..##..H.............#',
+      '.....===.##..H.............#',
+      '.........##..H.............#',
+      '...*.....##..H.............#',
+      '..===....11..H.............#',
+      '.........11.*H.............#',
+      '.........11.oH.............#',
+      '############################',
+      '############################',
+    ] },
+    // Seperti tuas_silang, lalu naik tangga ke tujuan di atas.
+    { id: 'tuas_silang_naik', kombo: true, dir: 'U', tags: ['tuas', 'tangga', 'saklar'], tier: [2, 3], inside: [[7, 8, 26, 11], [8, 2, 14, 4]], rows: [
+      '.......##################...',
+      '.......##################...',
+      '.......1.......##########.H#',
+      '.......1..*.*..##########.H#',
+      '....*..1....y..##########.H#',
+      '...##H###################*H#',
+      '.....H.##################.H#',
+      '.....H.##################.H#',
+      '.....H........4.......2...H#',
+      '.....H........4.......2...H#',
+      '.....H........4..*.*..2...H#',
+      '..t..H........4.......2...H#',
+      '############################',
+      '############################',
+    ] },
+    // Turun tangga: ceruk 1 punya tuas gerbang 1, ceruk 2 punya tuas gerbang 2; gergaji menunggu di dasar sumur.
+    { id: 'sumur_ceruk_ganda', kombo: true, dir: 'D', tags: ['tuas', 'tangga', 'gergaji'], tier: [2, 3], inside: [[2, 6, 6, 7], [2, 11, 6, 12], [15, 16, 23, 18]], rows: [
+      '...............#########',
+      '...............#########',
+      '...............#########',
+      '#H#######......#########',
+      '#H#######......#########',
+      '#H#######......#########',
+      '#H..*..##......#########',
+      '#H...t.##......#########',
+      '#H#######......#########',
+      '#H#######......#########',
+      '#H#######......#########',
+      '#H.....##......#########',
+      '#H...y.##......#########',
+      '#H#######......#########',
+      '#H#######......#########',
+      '#H#######......#########',
+      '#H.............1....2...',
+      '#H..*...*....*.1..*.2.*.',
+      '#H.........o...1....2...',
       '########################',
       '########################',
     ] },

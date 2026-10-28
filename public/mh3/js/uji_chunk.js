@@ -1,5 +1,5 @@
-// Math Hero 3: halaman uji ruang kombinasi (buka mh3/?uji=1). Memilih satu ruang dari pustaka level generator
-// (levelgen.chunks.js, bertanda uji: true) dan memainkannya langsung: ruang awal, ruang itu, lalu tujuan.
+// Math Hero 3: halaman uji ruang kombinasi (buka mh3/?uji=1). Memilih satu ruang kombinasi dari pustaka level generator
+// (levelgen.chunks.js, bertanda kombo: true) dan memainkannya langsung: ruang awal, ruang itu, lalu tujuan.
 // Tidak menyentuh data permainan; menang atau keluar kembali ke daftar ini.
 (function () {
   const M = window.MH2;
@@ -14,6 +14,10 @@
     { id: 'menara_dua_tuas', nama: 'Menara dua tuas', info: 'Naik ke tuas, turun, naik tangga, jembatan (vertikal)' },
     { id: 'tuas_silang', nama: 'Tuas silang', info: 'Nyalakan, naik tarik tuas 2, turun matikan tuas 1' },
     { id: 'kotak_turun', nama: 'Kotak turun sumur', info: 'Kotak jatuh ke tombol, tangga turun ke ceruk tuas' },
+    { id: 'menara_rapuh', nama: 'Menara rapuh', info: 'Menara dua tuas dengan pijakan papan rapuh' },
+    { id: 'menara_gergaji', nama: 'Menara gergaji', info: 'Menara dua tuas dengan gergaji di dasar' },
+    { id: 'tuas_silang_naik', nama: 'Tuas silang naik', info: 'Tuas silang, lalu naik tangga ke tujuan' },
+    { id: 'sumur_ceruk_ganda', nama: 'Sumur dua ceruk', info: 'Turun tangga, dua ceruk tuas, gergaji di dasar' },
   ];
   let withQuiz = false;
 
