@@ -683,13 +683,13 @@
       '####..........####',
       '####..........####',
     ] },
-    // Dua lontaran samping beruntun: dari pulau kecil di tengah, lontar lagi ke seberang.
+    // Dua lontaran samping beruntun: dari pulau kecil di tengah, lontar lagi ke seberang (lontaran tanpa lompat mendarat sekitar 8 petak dari pelontar; celah dibuat 5).
     { id: 'samping_dua', tags: ['samping'], tier: [2, 3], rows: [
-      '.*.............**..............*..*.....',
-      '........................................',
-      '........................................',
-      '..>...........>.........................',
-      '###...........###...........############',
+      '..................................',
+      '..................................',
+      '.*.....*.........*.........*...*..',
+      '..>.........>.....................',
+      '###.....######.....###############',
     ] },
     // Tiga gergaji diam berderet; lompati satu per satu.
     { id: 'gergaji_tiga', tags: ['gergaji'], tier: [2, 3], rows: [
