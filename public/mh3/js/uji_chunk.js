@@ -29,19 +29,19 @@
     update() {},
     draw(g) {
       M.drawBg(g, 'gua', 0, 0);
-      const x = 16, w = M.VW - 32, rh = Math.max(56, Math.min(76, (M.VH - 230) / (ROWS.length + 1)));
-      let y = 24;
-      M.text(g, 'Uji ruang kombinasi', M.VW / 2, y + 20, { size: 22, align: 'center' });
-      M.text(g, 'Pilih satu, mainkan, lalu beri tahu hasilnya.', M.VW / 2, y + 46, { size: 13, align: 'center', outline: false, color: '#e8e0ff' });
-      y += 70;
+      const x = 16, w = M.VW - 32, rh = Math.max(38, Math.min(76, (M.VH - 190) / (ROWS.length + 2)));
+      let y = 14;
+      M.text(g, 'Uji ruang kombinasi', M.VW / 2, y + 16, { size: 20, align: 'center' });
+      M.text(g, 'Pilih satu, mainkan, lalu beri tahu hasilnya.', M.VW / 2, y + 38, { size: 12, align: 'center', outline: false, color: '#e8e0ff' });
+      y += 54;
       ROWS.forEach((r) => {
-        M.button(g, { id: 'u_' + r.id, x, y, w, h: rh - 8, label: '', color: 'blue', onTap: () => play([r.id]),
-          draw: (c, bx, by, bw) => { M.text(c, r.nama, bx + bw / 2, by + 22, { size: 18, align: 'center' }); M.text(c, r.info, bx + bw / 2, by + 44, { size: 12, align: 'center', maxW: bw - 16, outline: false }); } });
+        M.button(g, { id: 'u_' + r.id, x, y, w, h: rh - 6, label: '', color: 'blue', onTap: () => play([r.id]),
+          draw: (c, bx, by, bw, bh) => { const t = bh < 56; M.text(c, r.nama, bx + bw / 2, by + (t ? 16 : 22), { size: t ? 15 : 18, align: 'center' }); M.text(c, r.info, bx + bw / 2, by + (t ? 33 : 44), { size: t ? 11 : 12, align: 'center', maxW: bw - 16, outline: false }); } });
         y += rh;
       });
-      M.button(g, { id: 'u_semua', x, y, w, h: rh - 8, label: 'Semua ruang berurutan', color: 'green', size: 17, onTap: () => play(ROWS.map((r) => r.id)) });
+      M.button(g, { id: 'u_semua', x, y, w, h: Math.min(rh - 6, 52), label: 'Semua ruang berurutan', color: 'green', size: 17, onTap: () => play(ROWS.map((r) => r.id)) });
       y += rh;
-      M.button(g, { id: 'u_soal', x, y, w, h: 48, label: withQuiz ? 'Benda macet (soal): nyala' : 'Benda macet (soal): mati', color: withQuiz ? 'purple' : 'gray', size: 15, onTap: () => { withQuiz = !withQuiz; } });
+      M.button(g, { id: 'u_soal', x, y, w, h: Math.min(rh - 6, 48), label: withQuiz ? 'Benda macet (soal): nyala' : 'Benda macet (soal): mati', color: withQuiz ? 'purple' : 'gray', size: 15, onTap: () => { withQuiz = !withQuiz; } });
     },
   });
 })();
