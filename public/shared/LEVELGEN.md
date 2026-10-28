@@ -170,3 +170,23 @@ Seed acak hanya untuk mode tambahan nanti (misalnya "Kejar Bebas").
 | G5 | 8 level Kejar diganti, seed dipilih dan dikunci | `npm run test:mh3`, bot menamatkan 8 level, uji layar 393x851 |
 
 Dikerjakan di cabang yang sama dengan kit bersama, tanpa merge. Uji di ponsel asli tetap dianjurkan setelah G5.
+
+## 6. Ruang kombinasi (teka-teki) dan halaman uji
+
+Ruang tunggal hanya menguji satu mekanik (seperti tutorial). Ruang bertanda `kombo: true` di `levelgen.chunks.js` menggabungkan
+beberapa mekanik jadi teka-teki. Satu ruang boleh memakai dua kanal: kanal pertama `1 4 t _`, kanal kedua `2 5 y ,`
+(gerbang, blok saklar terbalik, tuas, tombol); generator memetakan keduanya ke warna berbeda. Benda macet (pemicu soal)
+hanya dipasang pada kanal pertama.
+
+Ruang `uji: true` belum dipakai generator biasa (level yang sudah ada tidak berubah). Ikutkan dengan opsi `uji: true`, atau
+mainkan langsung lewat `http://localhost:8091/mh3/?uji=1` (daftar ruang, tombol "Semua ruang berurutan", dan saklar benda macet).
+Opsi `fixed: ['id', ...]` merangkai hanya ruang itu (dipakai halaman uji).
+
+| Ruang | Mekanik | Teka-teki |
+|---|---|---|
+| `tuas_ganda` | tuas, tuas | Tuas 1 buka gerbang 1, tuas 2 (di balik gerbang 1) buka gerbang 2. |
+| `kotak_tuas` | tuas, kotak, tombol | Tuas buka gerbang kotak; kotak didorong ke lubang tombol, gerbang kedua terbuka. |
+| `jembatan_dua` | tuas, saklar | Dua jurang 12 petak; tuas di awal dan tuas di seberang memunculkan jembatan masing-masing. |
+| `kotak_jembatan` | kotak, tombol, saklar | Kotak di lubang tombol memunculkan jembatan selama menekan. |
+| `kotak_dua` | kotak, tombol | Kotak 1 membuka gerbang tempat kotak 2 menunggu; kotak 2 membuka pintu keluar. |
+

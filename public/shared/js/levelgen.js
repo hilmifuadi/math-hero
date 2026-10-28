@@ -2,6 +2,7 @@
 // Merangkai ruang tulisan tangan (levelgen.chunks.js) dan potongan datar acak menjadi satu peta teks Kejar MH3.
 // Deterministik: seed yang sama selalu menghasilkan level yang sama.
 //   MHKit.levelgen.generate({ seed, tier, tema, mech: ['tangga', ...], intro: ['per'], foes: ['e', 'f'], quiz: 1, sec: 110 })
+//   Opsi tambahan: uji: true = ikutkan ruang kombinasi yang masih diuji; fixed: ['id', ...] = rangkai ruang itu saja (halaman uji).
 //   -> { map: [...string], inside: [[c0, r0, c1, r1]], tema, tier, seed, rooms: [{ id, c, w, dy }], est }
 // mech  = mekanik yang boleh muncul (tag ruang). intro = mekanik baru level ini: muncul dulu di ruang aman, lalu
 // diulang. foes = jenis musuh di potongan datar (e a r f n, lihat sim.js). quiz = jumlah tuas/tombol macet
@@ -106,7 +107,7 @@
 
   // Pilih ruang berikutnya. Mekanik intro muncul lebih dulu (ruang aman), mekanik lain sesuai izin level.
   function chooseChunk(R, st, o) {
-    const ok = (lim) => (ch) => o.tier >= ch.tier[0] && o.tier <= ch.tier[1] && ch.tags.every((t) => o.mech.includes(t)) &&
+    const ok = (lim) => (ch) => o.tier >= ch.tier[0] && o.tier <= ch.tier[1] && ch.tags.every((t) => o.mech.includes(t)) && (!ch.uji || o.uji) &&
       (st.used[ch.id] || 0) < lim && ch.id !== st.last;
     // tiap ruang paling banyak dipakai 2 kali; level awal (sedikit mekanik) boleh mengulang sampai 4 kali
     let all = Lib.CHUNKS.filter(ok(2));
@@ -147,11 +148,13 @@
     // Ruang tuas/tombol untuk soal: pastikan ada cukup tempat menaruh benda macet.
     const quizHost = (ch) => ch.rows.some((r) => /[t_]/.test(r));
     let hosts = 0;
-    while (est < o.sec && n < 40) {
-      let ch = chooseChunk(R, st, o);
+    // o.fixed = daftar id ruang berurutan (halaman uji): ruang itu dirangkai apa adanya, tanpa pemilihan acak.
+    const fixed = o.fixed ? o.fixed.map((id) => Lib.CHUNKS.find((c) => c.id === id) || (() => { throw new Error('ruang tidak ada: ' + id); })()) : null;
+    while (fixed ? n < fixed.length : est < o.sec && n < 40) {
+      let ch = fixed ? fixed[n] : chooseChunk(R, st, o);
       // Sisa soal belum punya tempat dan level sudah lewat separuh: sisipkan tuas di jalan.
-      if (hosts < o.quiz && est > o.sec * (0.3 + 0.3 * hosts) && !(ch && quizHost(ch))) {
-        const can = Lib.CHUNKS.filter((c) => quizHost(c) && o.tier >= c.tier[0] && o.tier <= c.tier[1] && c.id !== st.last &&
+      if (!fixed && hosts < o.quiz && est > o.sec * (0.3 + 0.3 * hosts) && !(ch && quizHost(ch))) {
+        const can = Lib.CHUNKS.filter((c) => quizHost(c) && o.tier >= c.tier[0] && o.tier <= c.tier[1] && c.id !== st.last && (!c.uji || o.uji) &&
           c.tags.every((t) => t === 'tuas' || o.mech.includes(t)));
         ch = R.pick(can);
       }
@@ -180,7 +183,7 @@
     const quizSlots = [];
     for (const p of placed) {
       const rows = remapChannel(p.b.rows, chan);
-      if (rows !== p.b.rows) { quizSlots.push(p); chan = (chan + 1) % 3; }
+      if (rows !== p.b.rows) { p.k = chan; quizSlots.push(p); chan = (chan + (p.b.rows.some((r) => /[25y,]/.test(r)) ? 2 : 1)) % 3; }
       p.rows = rows;
       const r0 = p.r + off;
       for (let r = 0; r < p.d.h; r++) for (let c = 0; c < p.d.w; c++) g[r0 + r][p.c + c] = rows[r][c];
@@ -197,6 +200,7 @@
       for (let r = 0; r < p.d.h; r++) for (let c = 0; c < p.d.w; c++) {
         const ch = g[p.r0 + r][p.c + c];
         const iL = LEVER.indexOf(ch), iP = PLATE.indexOf(ch);
+        if (iL >= 0 && iL !== p.k || iP >= 0 && iP !== p.k) continue;   // ruang kombinasi: hanya benda kanal pertama yang macet
         if (iL >= 0) g[p.r0 + r][p.c + c] = LEVER_Q[iL];
         else if (iP >= 0) g[p.r0 + r][p.c + c] = PLATE_Q[iP];
       }
@@ -223,9 +227,11 @@
   }
 
   // Ruang dengan gerbang/tuas/tombol memakai kanal 1 (blok saklar terbalik: 4); ganti ke kanal k (0..2).
+  // Ruang kombinasi boleh memakai kanal kedua (2, 5, y, ','), diganti ke kanal berikutnya (k + 1).
   function remapChannel(rows, k) {
     if (!rows.some((r) => /[14t_]/.test(r))) return rows;
-    return rows.map((r) => r.replace(/[14t_]/g, (ch) => ({ 1: GATE[k], 4: GATE_INV[k], t: LEVER[k], _: PLATE[k] })[ch]));
+    const k2 = (k + 1) % 3;
+    return rows.map((r) => r.replace(/[14t_25y,]/g, (ch) => ({ 1: GATE[k], 4: GATE_INV[k], t: LEVER[k], _: PLATE[k], 2: GATE[k2], 5: GATE_INV[k2], y: LEVER[k2], ',': PLATE[k2] })[ch]));
   }
 
   // Coba seed mulai dari o.seed sampai check(def) lulus. check menerima hasil generate dan mengembalikan true/false.

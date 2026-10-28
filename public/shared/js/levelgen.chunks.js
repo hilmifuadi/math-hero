@@ -7,6 +7,7 @@
 //   safe   ruang perkenalan tanpa bahaya (dipakai saat mekanik baru pertama muncul)
 //   inside persegi [c0, r0, c1, r1] yang digambar sebagai ruang dalam (gua, terowongan)
 //   bonus  ruang punya hadiah yang hanya terbuka dengan skill jagoan
+//   kombo  teka-teki beberapa mekanik; uji: true = belum dipakai generator biasa (lihat opsi uji di levelgen.js)
 // Aturan: lantai masuk = sel padat di kolom 0 dengan 2 sel kosong di atasnya, lantai keluar sama di kolom terakhir.
 // Bila ada beberapa: ruang naik masuk dari yang terbawah dan keluar dari yang teratas, ruang turun sebaliknya, atau
 // tulis in/out (nomor baris) sendiri. Sel padat di baris paling bawah diteruskan ke dasar peta; sel padat di baris
@@ -318,6 +319,64 @@
       '.....*..*..*....',
       '................',
       '################',
+    ] },
+
+    // ---------- kombinasi (teka-teki): dua mekanik atau lebih dalam satu ruang ----------
+    // uji: true = belum dipakai generator biasa; hanya muncul di halaman uji (mh3/uji_chunk.html) atau bila opsi uji dinyalakan.
+    // Kanal kedua dalam satu ruang: 2 gerbang, y tuas, ',' tombol, 5 blok saklar terbalik (kanal pertama: 1, t, _, 4).
+    // Tuas A membuka gerbang A; dari situ tuas B membuka gerbang B. Dua tuas berurutan.
+    { id: 'tuas_ganda', kombo: true, uji: true, tags: ['tuas'], tier: [1, 3], inside: [[0, 2, 23, 5]], rows: [
+      '########################',
+      '########################',
+      '.......1........2.......',
+      '.......1........2.......',
+      '....*..1...*....2...*...',
+      '..t....1....y...2.......',
+      '########################',
+    ] },
+    // Tarik tuas: gerbang terbuka. Dorong kotak ke lubang tombol: gerbang kedua terbuka (kotak mengisi lubang, jadi bisa dilewati).
+    { id: 'kotak_tuas', kombo: true, uji: true, tags: ['tuas', 'kotak'], tier: [1, 3], inside: [[0, 2, 25, 5]], rows: [
+      '##########################',
+      '##########################',
+      '......1..............2....',
+      '......1..............2....',
+      '......1....*.........2..*.',
+      '..t...1..B...........2....',
+      '#################,########',
+      '##########################',
+    ] },
+    // Dua jurang selebar 12. Tuas pertama memunculkan jembatan pertama, tuas kedua di seberang memunculkan jembatan kedua.
+    { id: 'jembatan_dua', kombo: true, uji: true, tags: ['tuas', 'saklar'], tier: [2, 3], rows: [
+      '..............................................',
+      '..............................................',
+      '..............................................',
+      '..............................................',
+      '.........*..*..*...............*..*..*........',
+      '...t....................y.....................',
+      '######444444444444##########555555555555######',
+      '######............##########............######',
+    ] },
+    // Dorong kotak ke lubang tombol: jembatan di jurang muncul selama kotak menekan tombol.
+    { id: 'kotak_jembatan', kombo: true, uji: true, tags: ['kotak', 'saklar'], tier: [2, 3], rows: [
+      '..................................',
+      '..................................',
+      '..................................',
+      '..................................',
+      '.................*..*..*..........',
+      '..B...............................',
+      '#######_######444444444444########',
+      '##############............########',
+    ] },
+    // Dua kotak, dua tombol: kotak pertama membuka gerbang tempat kotak kedua menunggu.
+    { id: 'kotak_dua', kombo: true, uji: true, tags: ['kotak'], tier: [1, 3], inside: [[0, 2, 33, 5]], rows: [
+      '##################################',
+      '##################################',
+      '............1..............2......',
+      '............1..............2......',
+      '..........*.1......*.......2...*..',
+      '...B........1...B..........2......',
+      '########_#############,###########',
+      '##################################',
     ] },
   ];
   return { CHUNKS };

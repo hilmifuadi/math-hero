@@ -447,7 +447,7 @@
   const bar = document.getElementById('load-bar');
   M.load((k) => { bar.style.width = Math.round(k * 100) + '%'; }).then(() => {
     document.body.classList.add('ready');
-    M.start('title');
+    M.start(/[?&]uji=1(&|$)/.test(location.search) && M.scenes.uji ? 'uji' : 'title');
   });
 
   MH3.flow = { openLevel, finishLevel, defenseParams, platParams };
