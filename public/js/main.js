@@ -7,6 +7,7 @@
   const A = window.Assets, R = window.Render, Ent = window.Ent;
 
   const canvas = document.getElementById('game');
+  const appEl = document.getElementById('app');
   const ctx = canvas.getContext('2d');
   const statusEl = document.getElementById('status');
   // Info teknis (ukuran layar, fps) hanya tampil jika alamat memakai ?debug=1; anak tidak perlu melihatnya.
@@ -40,8 +41,12 @@
 
   function resize() {
     state.dpr = Math.min(window.devicePixelRatio || 1, 2);
-    state.w = window.innerWidth;
-    state.h = window.innerHeight;
+    // Di laptop kolom permainan dibatasi selebar HP (seperti MH2 dan MH3); HP mendatar tetap penuh.
+    const iw = window.innerWidth, ih = window.innerHeight;
+    const colW = iw > 700 && ih > 480 ? Math.min(iw, Math.round(ih * 0.66)) : iw;
+    appEl.style.width = colW + 'px';
+    state.w = colW;
+    state.h = ih;
     state.zoom = Math.max(1, Math.floor(Math.min(state.w / 380, state.h / 640) * 2) / 2);
     state.vw = state.w / state.zoom;
     state.vh = state.h / state.zoom;

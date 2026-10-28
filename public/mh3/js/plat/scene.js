@@ -20,7 +20,10 @@
   const controls = () => ({ dpad: true, a: 'Lompat', b: SKILL_LABEL[S && S.g && S.g.skill] || null });
   const heroKey = () => (M.save && M.save.active && M.save.active.hero) || 'pinki';
   const say = (t, ms, c) => M.toast(t, ms, c);
+  // viewH: bagian layar di atas tombol (dipakai kamera dan balon petunjuk). Dunia digambar sampai dasar layar,
+  // tombol menumpang di atasnya, jadi dasar kolom tidak terpotong di layar tinggi atau laptop.
   const viewH = () => M.VH - HUD - PAD_H;
+  const fullH = () => M.VH - HUD;
 
   function handle(e) {
     const a = M.audio, fx = M.fx;
@@ -267,11 +270,11 @@
   }
 
   function drawWorld(g) {
-    const gm = S.g, L = gm.L, cam = S.cam, vw = M.VW / SC, vh = viewH() / SC;
-    g.save(); g.beginPath(); g.rect(0, HUD, M.VW, viewH()); g.clip();
+    const gm = S.g, L = gm.L, cam = S.cam, vw = M.VW / SC, vh = fullH() / SC;
+    g.save(); g.beginPath(); g.rect(0, HUD, M.VW, fullH()); g.clip();
     g.translate(0, HUD); g.scale(SC, SC); g.translate(-Math.round(cam.x), -Math.round(cam.y));
     const c0 = Math.max(0, Math.floor(cam.x / T)), c1 = Math.min(L.cols - 1, Math.floor((cam.x + vw) / T) + 1);
-    const r0 = Math.max(0, Math.floor(cam.y / T)), r1 = Math.min(L.rows - 1, Math.floor((cam.y + vh) / T) + 1);
+    const r0 = Math.max(0, Math.floor(cam.y / T)), r1 = Math.floor((cam.y + vh) / T) + 1;
     // Ruang dalam (gua, terowongan): latar digelapkan dan diberi dinding belakang bata samar dengan warna tema.
     for (const q of S.def.inside || []) {
       const x = q[0] * T, y = q[1] * T, w = (q[2] - q[0] + 1) * T, h = (q[3] - q[1] + 1) * T;
@@ -283,7 +286,8 @@
     for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
       const i = r * L.cols + c;
       if (L.lad[i]) drawLadder(g, c, r);
-      const t = L.tiles[i];
+      // di bawah baris terakhir: lanjutkan kolom tanah sampai dasar layar (lubang tetap lubang)
+      const t = r >= L.rows ? L.tiles[(L.rows - 1) * L.cols + c] : L.tiles[i];
       if (!t || S.gateCell.has(i)) continue;
       if (t === 2) { drawPlank(g, c * T, r * T, T); continue; }
       drawTile(g, L, c, r);

@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node server.js",
     "test": "npm run test:scores && npm run test:bonus && npm run test:bank && npm run test:levels && npm run test:template && npm run test:save && npm run test:mh2 && npm run test:mh3 && node tests/math.test.js",
-    "test:ui": "node tests/scratchpad_ui.js && node tests/bonus_ui.js && node tests/template_ui.js && node tests/mh3_homework_ui.js && node tests/mh3_map_ui.js && node tests/mh3_defense_ui.js && node tests/mh3_chests_ui.js && node tests/mh3_boss_ui.js && node tests/mh3_plat_ui.js && node tests/mh3_endless_ui.js && node tests/mh2_balap_tap.js && node tests/mh2_menu_ui.js",
+    "test:ui": "node tests/scratchpad_ui.js && node tests/bonus_ui.js && node tests/template_ui.js && node tests/mh3_homework_ui.js && node tests/mh3_map_ui.js && node tests/mh3_defense_ui.js && node tests/mh3_chests_ui.js && node tests/mh3_boss_ui.js && node tests/mh3_plat_ui.js && node tests/mh3_endless_ui.js && node tests/mh2_balap_tap.js && node tests/mh2_menu_ui.js && node tests/layout_laptop_ui.js",
     "test:legacy": "python tests/playthrough.py && python tests/menu.py && python tests/pose_b.py && python tests/lompat2x.py && python tests/nama_highscore.py && python tests/halaman_awal.py && python tests/mode_statis.py && python tests/mh2_playthrough.py",
     "test:save": "node tests/save_migrasi.test.js",
     "test:template": "node tests/template.test.js",

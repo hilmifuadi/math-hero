@@ -129,8 +129,11 @@
       x += w + gap;
     });
   }
+  // Layar pendek (laptop): tombol angka dipendekkan supaya kotak soal tetap lega.
+  const keyH = () => (M.VH < 640 ? 40 : 50);
+  const keysBlock = () => 4 * (keyH() + (M.VH < 640 ? 6 : 7));
   function drawKeypad(g, y) {
-    const VW = M.VW, kw = 92, kh = 50, gx = 8, gy = 7;
+    const VW = M.VW, kw = 92, kh = keyH(), gx = 8, gy = M.VH < 640 ? 6 : 7;
     const x0 = (VW - (3 * kw + 2 * gx)) / 2;
     const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'hapus', '0', 'OK'];
     keys.forEach((k, i) => {
@@ -149,10 +152,16 @@
     // Banner jeda kertas.
     M.text(g, 'Ambil kertas dan pensil.\nTidak ada waktu, santai saja.', VW / 2, 36, { size: 18, align: 'center', color: '#ffd54a', lh: 24 });
     // Soal.
-    const qh = Math.min(230, VH - 470);
+    const qh = Math.max(110, Math.min(230, VH - 246 - keysBlock()));
     M.panel(g, px, 84, pw, qh, { title: S.opts.title || 'PR', titleFill: '#7b4bd6' });
-    const qsize = String(S.p.question).length > 110 ? 20 : 22;
-    M.text(g, S.p.question, px + pw / 2, 84 + qh / 2 + 6, { size: qsize, align: 'center', color: '#2b1d52', outline: false, maxW: pw - 28, lh: qsize + 6 });
+    // Ukuran huruf mengecil sampai teks muat di kotak, supaya soal panjang tidak menimpa judul atau keluar kotak.
+    let qsize = 22, lines;
+    for (; qsize > 12; qsize--) {
+      g.font = `${qsize}px ${M.FONT}`;
+      lines = String(S.p.question).split('\n').reduce((n, l) => n + M.wrap(g, l, pw - 28).length, 0);
+      if (lines * (qsize + 5) <= qh - 36) break;
+    }
+    M.text(g, S.p.question, px + pw / 2, 84 + qh / 2 + 8, { size: qsize, align: 'center', color: '#2b1d52', outline: false, maxW: pw - 28, lh: qsize + 5 });
     // Kolom jawaban.
     const ay = 84 + qh + 14;
     drawFields(g, ay + sh * 0);
