@@ -14,6 +14,15 @@
   const btnAction = document.getElementById('btn-action');
   const btnPause = document.getElementById('btn-pause');
 
+  // Keyboard laptop: panah/WASD jalan, Spasi/Z/K lompat, B/X/J aksi, P/Esc jeda.
+  const MOVE = { ArrowLeft: 'l', KeyA: 'l', ArrowRight: 'r', KeyD: 'r', ArrowUp: 'u', KeyW: 'u', ArrowDown: 'd', KeyS: 'd' };
+  const JUMP = { Space: 1, KeyZ: 1, KeyK: 1 }, ACT = { KeyB: 1, KeyX: 1, KeyJ: 1 }, PAUSE = { KeyP: 1, Escape: 1 };
+  const keys = { l: false, r: false, u: false, d: false };
+  let kbJump = false, kbAct = false, touchJump = false, touchAct = false;
+  const splashEl = document.getElementById('splash'), quizEl = document.getElementById('quiz');
+  const gameKeysOn = () => splashEl.classList.contains('hidden') && quizEl.classList.contains('hidden')
+    && !document.querySelector('.panel:not(.hidden)');
+
   let joyPointer = null;
   let joyCenter = { x: 0, y: 0 };
 
@@ -33,11 +42,20 @@
     input.down = input.joy.y > DEAD_ZONE;
   }
 
+  function applyKeys() {
+    if (joyPointer !== null) return;
+    const x = (keys.r ? 1 : 0) - (keys.l ? 1 : 0), y = (keys.d ? 1 : 0) - (keys.u ? 1 : 0);
+    input.joy.x = x; input.joy.y = y;
+    input.left = x < 0; input.right = x > 0; input.up = y < 0; input.down = y > 0;
+  }
+  function syncButtons() { input.jump = touchJump || kbJump; input.action = touchAct || kbAct; }
+
   function resetJoy() {
     joyPointer = null;
     knob.style.transform = 'translate(0px, 0px)';
     input.joy.x = 0; input.joy.y = 0;
     input.left = input.right = input.up = input.down = false;
+    applyKeys();
   }
 
   base.addEventListener('pointerdown', (e) => {
@@ -59,14 +77,33 @@
   base.addEventListener('lostpointercapture', endJoy);
 
   function holdButton(el, key) {
-    el.addEventListener('pointerdown', (e) => { input[key] = true; el.classList.add('down'); e.preventDefault(); });
-    const up = () => { input[key] = false; el.classList.remove('down'); };
+    const set = (v) => { if (key === 'jump') touchJump = v; else touchAct = v; syncButtons(); };
+    el.addEventListener('pointerdown', (e) => { set(true); el.classList.add('down'); e.preventDefault(); });
+    const up = () => { set(false); el.classList.remove('down'); };
     el.addEventListener('pointerup', up);
     el.addEventListener('pointercancel', up);
     el.addEventListener('pointerleave', up);
   }
   holdButton(btnJump, 'jump');
   holdButton(btnAction, 'action');
+
+  window.addEventListener('keydown', (e) => {
+    if (e.ctrlKey || e.metaKey || e.altKey || !gameKeysOn()) return;
+    const m = MOVE[e.code];
+    if (m) { keys[m] = true; applyKeys(); }
+    else if (JUMP[e.code]) { kbJump = true; syncButtons(); }
+    else if (ACT[e.code]) { kbAct = true; syncButtons(); }
+    else if (PAUSE[e.code]) { if (!e.repeat) input.pausePressed = true; }
+    else return;
+    e.preventDefault();
+  });
+  window.addEventListener('keyup', (e) => {
+    const m = MOVE[e.code];
+    if (m) { keys[m] = false; applyKeys(); }
+    else if (JUMP[e.code]) { kbJump = false; syncButtons(); }
+    else if (ACT[e.code]) { kbAct = false; syncButtons(); }
+  });
+  window.addEventListener('blur', () => { keys.l = keys.r = keys.u = keys.d = false; kbJump = kbAct = false; applyKeys(); syncButtons(); });
 
   btnPause.addEventListener('click', () => { input.pausePressed = true; });
 
