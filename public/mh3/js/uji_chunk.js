@@ -1,5 +1,6 @@
 // Math Hero 3: halaman uji ruang kombinasi (buka mh3/?uji=1). Memilih satu ruang yang belum diuji dari pustaka level generator
 // (levelgen.chunks.js) dan memainkannya langsung: ruang awal, ruang itu, lalu tujuan.
+// Baris tombol 'Kejar 5-8' memainkan level Kejar asli (seed tetap) langsung.
 // Tidak menyentuh data permainan; menang atau keluar kembali ke daftar ini.
 (function () {
   const M = window.MH2;
@@ -31,7 +32,7 @@
     update() {},
     draw(g) {
       M.drawBg(g, 'gua', 0, 0);
-      const x = 16, w = M.VW - 32, rh = Math.max(38, Math.min(76, (M.VH - 190) / (ROWS.length + 2)));
+      const x = 16, w = M.VW - 32, rh = Math.max(38, Math.min(76, (M.VH - 190) / (ROWS.length + 3)));
       let y = 14;
       M.text(g, 'Uji ruang kombinasi', M.VW / 2, y + 16, { size: 20, align: 'center' });
       M.text(g, 'Pilih satu, mainkan, lalu beri tahu hasilnya.', M.VW / 2, y + 38, { size: 12, align: 'center', outline: false, color: '#e8e0ff' });
@@ -41,6 +42,9 @@
           draw: (c, bx, by, bw, bh) => { const t = bh < 56; M.text(c, r.nama, bx + bw / 2, by + (t ? 16 : 22), { size: t ? 15 : 18, align: 'center' }); M.text(c, r.info, bx + bw / 2, by + (t ? 33 : 44), { size: t ? 11 : 12, align: 'center', maxW: bw - 16, outline: false }); } });
         y += rh;
       });
+      const bw4 = (w - 3 * 8) / 4, bh4 = Math.min(rh - 6, 48);
+      [5, 6, 7, 8].forEach((n, i) => M.button(g, { id: 'u_k' + n, x: x + i * (bw4 + 8), y, w: bw4, h: bh4, label: 'Kejar ' + n, color: 'orange', size: 15, onTap: () => M.go('plat', { level: n, onWin: () => M.go('uji'), onLose: () => M.go('uji') }) }));
+      y += rh;
       M.button(g, { id: 'u_semua', x, y, w, h: Math.min(rh - 6, 52), label: 'Semua ruang berurutan', color: 'green', size: 17, onTap: () => play(ROWS.map((r) => r.id)) });
       y += rh;
       M.button(g, { id: 'u_soal', x, y, w, h: Math.min(rh - 6, 48), label: withQuiz ? 'Benda macet (soal): nyala' : 'Benda macet (soal): mati', color: withQuiz ? 'purple' : 'gray', size: 15, onTap: () => { withQuiz = !withQuiz; } });
