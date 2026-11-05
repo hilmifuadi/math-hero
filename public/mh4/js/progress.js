@@ -22,6 +22,7 @@
   };
   const BASE_WEAPONS = ['pedang', 'blaster'];
   const BASE_GEAR = { melee: 'pedang', ranged: 'blaster' };
+  const COINS = { star: 1, chest: 12, first: 10, bossFirst: 60, bossAgain: 10 };
   // Senjata baru ditemukan di peti level ini saat pertama kali dibuka.
   const CHEST_WEAPONS = { 2: 'tombak', 4: 'pelontar', 7: 'palu', 10: 'pantul' };
 
@@ -38,6 +39,7 @@
       uid: opts.uid || makeUid(),
       nama: String(nama || 'PEMAIN').slice(0, 12),
       koin: 0,
+      kelas: 0,
       owned: Shop.BASE_OWNED.slice(),
       equipped: Object.assign({}, Shop.BASE_EQUIPPED),
       best: {},
@@ -63,6 +65,8 @@
     const p = newProfile(typeof raw.nama === 'string' && raw.nama.trim() ? raw.nama.trim() : 'PEMAIN');
     if (typeof raw.uid === 'string' && UID_RE.test(raw.uid)) p.uid = raw.uid;
     p.koin = clampCoins(raw.koin);
+    if (typeof raw.playDay === 'string') { p.playDay = raw.playDay.slice(0, 12); p.playSec = Math.max(0, Number(raw.playSec) || 0); }
+    p.kelas = Math.max(0, Math.min(6, Math.floor(Number(raw.kelas)) || 0));
     const owned = new Set(Shop.BASE_OWNED);
     if (Array.isArray(raw.owned)) {
       for (const id of raw.owned) if (Shop.get(id)) owned.add(id);
@@ -80,13 +84,14 @@
     if (raw.best && typeof raw.best === 'object') {
       for (const [k, v] of Object.entries(raw.best)) {
         const id = Number(k);
-        if (!(id >= 1 && id <= 30) || !v || typeof v !== 'object') continue;
+        if (!(id >= 1 && id <= 40) || !v || typeof v !== 'object') continue;
         const stars = Math.max(0, Math.min(99, Math.floor(Number(v.stars) || 0)));
         p.best[id] = {
           stars,
           chest: !!v.chest,
           boss: !!v.boss,
           done: !!v.done,
+          score: Math.max(0, Math.min(99999, Math.floor(Number(v.score) || 0))),
           at: isFinite(Number(v.at)) ? Number(v.at) : 0,
         };
       }
@@ -125,6 +130,7 @@
     out.meleeMul *= 1 + (stats.atk || 0) * 0.08;
     out.rangedMul *= 1 + (stats.atk || 0) * 0.08;
     out.speedMul *= 1 + (stats.spd || 0) * 0.03;
+    out.armor = (profile.equipped && profile.equipped.armor) || null;
     if (profile.gear) {
       out.melee = profile.gear.melee || out.melee;
       out.ranged = profile.gear.ranged || out.ranged;
@@ -140,37 +146,47 @@
     return out;
   }
 
-  function coinReward(profile, result, first) {
+  // Level memberi sedikit koin; pemasukan utama datang dari ladang dan ternak.
+  // Main ulang hanya membayar bintang yang lebih banyak dari rekor, jadi tidak bisa ditimbun.
+  function coinReward(profile, result, first, prev) {
     result = result || {};
-    let n = Math.max(0, Math.floor(Number(result.stars) || 0)) * 5;
-    if (result.chest) n += 30;
-    if (result.boss) n += first ? 120 : 60;
-    if (first) n += 20;
+    const best = prev ? prev.stars || 0 : 0;
+    const stars = Math.max(0, Math.floor(Number(result.stars) || 0));
+    let n = Math.max(0, stars - best) * COINS.star;
+    if (result.chest && !(prev && prev.chest)) n += COINS.chest;
+    if (result.boss) n += first ? COINS.bossFirst : COINS.bossAgain;
+    if (first) n += COINS.first;
     return Math.round(n * loadout(profile).coinMul);
   }
 
   // Mencatat hasil level. Mengembalikan { first, coins }. Bintang memakai nilai terbaik.
   function gain(profile, result, now) {
     result = result || {};
-    const id = Math.max(1, Math.min(30, Math.floor(Number(result.levelId) || 1)));
+    const id = Math.max(1, Math.min(40, Math.floor(Number(result.levelId) || 1)));
     const prev = profile.best[id];
     const first = !prev || !prev.done;
     const stars = Math.max(prev ? prev.stars : 0, Math.max(0, Math.min(99, Math.floor(Number(result.stars) || 0))));
+    // Mengulang level tidak menambah skor: hanya skor terbaik per level yang dihitung.
+    const score = Math.max(0, Math.floor(Number(result.score) || 0));
+    const prevScore = prev ? prev.score || 0 : 0;
     profile.best[id] = {
       stars,
+      score: Math.max(prevScore, score),
       chest: !!(result.chest || (prev && prev.chest)),
       boss: !!(result.boss || (prev && prev.boss)),
       done: true,
       at: now || Date.now(),
     };
     profile.totalStars = Object.values(profile.best).reduce((n, b) => n + b.stars, 0);
-    const coins = coinReward(profile, { stars: result.stars || 0, chest: result.chest, boss: result.boss }, first);
+    const coins = coinReward(profile, { stars: result.stars || 0, chest: result.chest, boss: result.boss }, first, prev);
     profile.koin = clampCoins(profile.koin + coins);
     const points = first ? (result.boss ? 2 : 1) : 0;
     profile.points = (profile.points || 0) + points;
     profile.updatedAt = now || Date.now();
-    return { first, coins, points };
+    return { first, coins, points, score, bestScore: Math.max(prevScore, score), newBest: score > prevScore, total: totalScore(profile) };
   }
+
+  const totalScore = (profile) => Object.values(profile.best).reduce((n, b) => n + (b.score || 0), 0);
 
   function spendPoint(profile, stat, now) {
     const def = STATS[stat];
@@ -190,6 +206,19 @@
     profile.weapons.push(id);
     profile.updatedAt = now || Date.now();
     return id;
+  }
+
+  // Senjata pamungkas dibeli dengan koin setelah boss terakhir kalah.
+  function buyWeapon(profile, id, now) {
+    const w = Weapons.WEAPONS[id];
+    if (!w || !w.ultimate) return { ok: false, reason: 'tidak-dijual' };
+    if (profile.weapons.indexOf(id) >= 0) return { ok: false, reason: 'sudah-punya' };
+    if (!(profile.best[Story.FINALE] && profile.best[Story.FINALE].done)) return { ok: false, reason: 'terkunci' };
+    if (profile.koin < w.price) return { ok: false, reason: 'koin-kurang', kurang: w.price - profile.koin };
+    profile.koin -= w.price;
+    profile.weapons.push(id);
+    profile.updatedAt = now || Date.now();
+    return { ok: true };
   }
 
   function equipWeapon(profile, id, now) {
@@ -223,8 +252,9 @@
   }
 
   // Progresi mengikuti urutan cerita (base/story.js): misi terbuka setelah misi sebelumnya
-  // pada rute selesai, jadi Hantu Kabut menjadi puncak bab 1, bukan akhir daftar level.
+  // pada rute selesai, jadi Lendir Kabut menjadi puncak bab 1, bukan akhir daftar level.
   function unlocked(profile, id) {
+    if (Story.ACAK.includes(id)) return !!(profile && profile.best[Story.ACAK_AFTER] && profile.best[Story.ACAK_AFTER].done);
     const i = Story.ROUTE.indexOf(id);
     if (i <= 0) return i === 0;
     const prev = profile && profile.best[Story.ROUTE[i - 1]];
@@ -293,7 +323,7 @@
   }
 
   return {
-    KEY, VERSION, MAX_COINS, STATS, CHEST_WEAPONS, spendPoint, openChest, equipWeapon,
+    buyWeapon, clampCoins, totalScore, KEY, VERSION, MAX_COINS, STATS, CHEST_WEAPONS, spendPoint, openChest, equipWeapon,
     newProfile, normalize, loadout, coinReward, gain,
     buy, equip, unlocked, serialize, parse, loadLocal, saveLocal, newer, toCloud,
   };

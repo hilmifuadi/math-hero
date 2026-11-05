@@ -100,6 +100,124 @@ Lalu hapus baris entri itu dari tabel "Klaim aktif".
 
 ## 5. Riwayat
 
+### WL-028 — Bangun kampung, Titu, dan senjata pamungkas
+- **Agen:** claude-opus
+- **Status:** RESOLVED
+- **Area/klaim:** `public/mh4/js/base/` (farm, world, sim, scene, talk), `public/mh4/js/main.js`, `public/mh4/js/combat/weapons.js`, `public/mh4/js/sim.js`, `public/mh4/js/scene.js`, `public/mh4/js/progress.js`, `scripts/prepare_assets_mh4.js`, `tests/mh4_base.test.js`, `tests/mh4_combat.test.js`
+- **Ringkasan:** 12 hiasan dan bangunan kampung, Titu si kucing yang mengikuti Arka, tiga senjata pamungkas setelah tamat. Peta kampung jadi 38 baris.
+- **Tes:** `npm run test:mh4`, `npm run test:snapshot` sama. Dicek di browser dengan semua bangunan terpasang.
+- **Catatan:** di-commit dan di-merge atas permintaan pengguna.
+
+### WL-027 — Mode level acak dan boss acak
+- **Agen:** claude-opus
+- **Status:** RESOLVED
+- **Area/klaim:** `public/mh4/js/gen/levels.js`, `public/mh4/js/boss/gen.js`, `public/mh4/js/base/story.js`, `public/mh4/js/progress.js`, `public/mh4/js/main.js`, `public/mh4/js/scene.js`, `public/mh4/index.html`, `tests/mh4_levelgen.test.js`, `tests/mh4_boss.test.js`
+- **Ringkasan:** level acak id 35 dan boss acak id 17 terbuka setelah boss pertama. Pemeriksa jalur `reachable()` menolak peta mustahil. Boss acak kini 9 makhluk, 12 mekanik, 3 watak, 4 arena, tingkat mengikuti kemajuan. Seed bisa dilihat dan diketik.
+- **Tes:** `npm run test:mh4`, `npm run test:snapshot` sama. Dicek di browser. `reachable()` sengaja longgar, jadi belum menjamin tiap peta acak nyaman; belum ada uji main penuh oleh orang.
+- **Catatan:** belum di-commit.
+
+### WL-026 — Paket 5: tutorial, ending, kredit, kontrol, beranda
+- **Agen:** claude-opus
+- **Status:** RESOLVED
+- **Area/klaim:** `public/mh4/js/tutor.js` (baru), `public/mh4/js/main.js`, `public/mh4/js/sim.js`, `public/mh4/js/scene.js`, `public/mh4/js/base/story.js`, `public/mh4/index.html`, `public/mh4/README.md`, `public/index.html`, `tests/mh4_sim.test.js`
+- **Ringkasan:** tutorial kontrol di misi 1 mengikuti aksi pemain. Ending dan gulungan kredit setelah Raja Goblin kalah pertama kali, kredit juga di layar judul. Tinggi lompat mengikuti lama tombol ditahan (`JUMP_CUT` 0,5). Kiri dan kanan jadi satu bantalan geser, tombol atas disembunyikan saat misi. Kartu MH4 di beranda dan tautan ke beranda seri. Lentera Hantu Penakut digambar di atas kegelapan berwarna toska dengan panah.
+- **Tes:** `npm run test:mh4` (termasuk 2 tes baru), `npm run test:snapshot` sama. Dicek di browser; geser jempol diuji dengan event buatan, belum di HP sungguhan.
+- **Belum dikerjakan dari review:** mode level seed acak (temuan 9), pindah perangkat (temuan 16).
+- **Catatan:** belum di-commit. Aturan Firestore masih perlu dipublikasikan pemilik proyek.
+
+### WL-025 — Revisi boss: lompatan, lentera, aset, transisi tumbang
+- **Agen:** claude-opus
+- **Status:** RESOLVED
+- **Area/klaim:** `public/mh4/js/boss/`, `public/mh4/js/sim.js`, `public/mh4/js/scene.js`, `public/mh4/js/base/story.js`, `scripts/prepare_assets_mh4.js`, `tests/mh4_boss.test.js`
+- **Ringkasan:** lompatan boss lebih lambat dan tinggi (hopTime 1.15-1.35, height 100-104). Lentera menyala tanpa menahan pukulan. Tampilan boss tidak lagi berulang: Labu Ajaib, Anak Anjing Ngantuk, Kucing Belang, Hantu Penakut (id internal tetap). Saat HP habis Arka tumbang 1,4 detik dengan layar menggelap sebelum bangkit.
+- **Tes:** `npm run test:mh4`, `npm run test:snapshot`. Tampilan dicek di browser. Belum diuji main penuh oleh orang.
+- **Catatan:** belum di-commit.
+
+### WL-024 — Rancang ulang semua boss
+- **Agen:** claude-opus
+- **Status:** RESOLVED
+- **Area/klaim:** `public/mh4/js/boss/`, `public/mh4/js/sim.js`, `public/mh4/js/scene.js`, `public/mh4/js/main.js`, `public/mh4/js/gen/levels.js`, `tests/mh4_boss.test.js`
+- **Ringkasan:** tujuh boss di `bosses/roster.js`, masing-masing dengan mekanik khas, gaya jalan, dan celetukan. Primitif baru di mesin: hop, teleport, shield, flight, split, lights, pantulan, benda arena, stagger. Senjata dekat 4 kali lebih kuat dari jauh saat celah, celah sekitar 3 detik di tanah. Data boss lama menjadi fixture uji primitif.
+- **Tes:** `npm run test:mh4`, `npm run test:snapshot`. Belum diuji main penuh oleh orang.
+- **Catatan:** belum di-commit.
+
+### WL-023 - Pelontar samping, boss ramah anak, Farah anak-anak, hijab Mamah Zahra
+- **Agen:** claude-opus
+- **Status:** RESOLVED
+- **Ringkasan:** senjata Pelontar kembali semula. Pad panah menjadi pelontar samping dengan lubang 12 petak. Boss diganti Lendir Kabut dan Raja Goblin dengan animasi jalan, napas, dan ancang-ancang. Lembar diam 32 piksel dinormalkan ke 64.
+- **Tes:** npm run test:mh4, npm run test:snapshot.
+- **Catatan:** belum di-commit.
+
+### WL-022 — Pintu rahasia, soal hanya senjata dekat, musuh per tema, PR peti, skor dan papan skor
+- **Agen:** claude-opus
+- **Status:** RESOLVED
+- **Area/klaim:** `public/mh4/js/` (sim, mech, soal, scene, main, progress, combat/enemies, gen), `public/mh4/index.html`, `scripts/prepare_assets_mh4.js`, `public/assets/mh4/v2/enemies/`, `tests/mh4_*`
+- **Mulai:** 2026-11-06 01:30 +07:00
+- **Resolved:** 2026-11-06 02:30 +07:00
+- **Ringkasan:** pintu ajaib kini dua arah, masuk dengan tombol bawah, menuju ruang rahasia. Jawaban hanya dipilih senjata dekat. Tujuh musuh baru dan kumpulan musuh per tema. PR soal cerita kelas 1-6 di peti. Skor per level, skor terbaik per misi, dan papan `mh4`.
+- **Tes:** `npm run test:mh4`, `npm run test:snapshot`.
+- **Catatan:** papan skor bersama butuh konfigurasi Firebase yang sudah ada; indeks Firestore untuk board mh4 memakai pola yang sama dengan MH lain. Belum di-commit.
+
+### WL-021 — Pelontar, tampilan senjata, efek kemenangan, warga baru dan dialog cerdas
+- **Agen:** claude-opus
+- **Status:** RESOLVED
+- **Area/klaim:** `public/mh4/js/` (combat/weapons, sim, scene, main, progress, base/talk, base/story, base/world), `scripts/prepare_*_mh4.js`, `public/mh4/index.html`, `tests/mh4_talk.test.js`
+- **Mulai:** 2026-11-06 00:30 +07:00
+- **Resolved:** 2026-11-06 01:30 +07:00
+- **Ringkasan:** Pelontar melambung sekitar 17 petak. Enam sprite senjata baru, proyektil dan tebasan per senjata, partikel, getar layar, jeda saat kena, animasi mati musuh, urutan kemenangan boss, dan kartu senjata ringkas. Warga berganti nama, ditambah Mamah Zahra, dan dialog mengikuti waktu, lama bermain, dan keadaan Arka.
+- **Tes:** `npm run test:mh4` (termasuk `mh4_talk`) lulus, `npm run test:snapshot` 8 hash sama.
+- **Catatan:** isi nasihat Mamah Zahra sebaiknya ditinjau pengguna. Belum di-commit.
+
+### WL-020 — Freeze boss, kelas, tiga soal, mekanik MH3, menara, mini boss, level tambahan
+- **Agen:** claude-opus
+- **Status:** RESOLVED
+- **Area/klaim:** `public/mh4/js/` (sim, mech, soal, scene, main, gen, base, combat, progress), `scripts/prepare_*_mh4.js`, `public/assets/mh4/v2/`, `tests/mh4_*`, `package.json`
+- **Mulai:** 2026-11-05 22:10 +07:00
+- **Resolved:** 2026-11-06 00:30 +07:00
+- **Ringkasan:** freeze berasal dari pemanggilan fungsi `star` yang terhapus di WL-019. Ditambah NPC Bu Laras (`profile.kelas`), `soal.js` kelas 1-6, tiga gerbang per level (`L.gateGroups`), `mech.js`, ruang `m-*` dan rangkaian mekanik `addMech`, mini boss, empat menara, dan 12 misi baru.
+- **Tes:** `npm run test:mh4`, `npm run test:snapshot` (8 hash sama). Menara diperiksa dengan graf pijakan, belum dimainkan sampai tamat.
+- **Catatan:** belum di-commit.
+
+### WL-019 — Rombak visual platformer semua tema
+- **Agen:** claude-opus
+- **Status:** RESOLVED
+- **Area/klaim:** `public/mh4/js/theme.js`, `public/mh4/js/scene.js`, `scripts/prepare_world_mh4.js`, `public/assets/mh4/v2/world/`
+- **Mulai:** 2026-11-05 21:35 +07:00
+- **Resolved:** 2026-11-05 22:45 +07:00
+- **Ringkasan:** delapan tema memakai satu gaya: tanah dari tekstur batu Pixel Crawler atau balok buatan kode, tutup tanah sesuai tema, latar berlapis warna datar 320x180, dekor opak yang menapak, serta duri, bintang, bendera, gerbang soal, dan gerbang tujuan berbentuk piksel. Juga diperbaiki: indikator jeda serangan (temuan sebelumnya) dan arah ayam.
+- **Tes:** `npm run test:mh4` lulus semua; generator tidak disentuh. Tampilan dicek pada green, industrial, simple, night, crystal, hive, day, castle, dan arena boss 1.
+- **Catatan:** folder aset tema lama di `public/assets/mh4/<tema>/` tidak lagi dipakai `theme.js` dan belum dihapus. Belum di-commit.
+
+### WL-018 — Bar HP, senjata dipegang, kampung baru, hero Arka, tanpa babi
+- **Agen:** claude-opus
+- **Status:** RESOLVED
+- **Resolved:** 2026-11-05 22:10 +07:00
+- **Ringkasan:** isi bar HP digambar sesuai HP karena `ui/bar.png` memuat merah sampai ±70%. Senjata berputar pada kepalan yang ikut naik turun bersama tubuh. Peta kampung baru 42x33: empat rumah warga (atap diwarnai ulang), alun-alun dengan air mancur, delapan bedengan 2x2, kandang, sungai melintang, jembatan utara-selatan dari gambar asli. Hero menjadi Arka, ternak babi dan item jamur dihapus.
+- **Tes:** `npm run test:mh4` — semua lulus; `npm run test:snapshot` — 8 hash sama. Tampilan dicek di browser (kampung, jembatan, bar HP, pedang, blaster).
+- **Area/klaim:** `public/mh4/js/scene.js`, `public/mh4/js/base/`, `public/mh4/js/main.js` (hanya teks nama dan titik keluar rumah), `public/mh4/index.html` (judul), `scripts/prepare_assets_mh4.js`, `public/assets/mh4/v2/base/`, `tests/mh4_base.test.js`, dokumen yang menyebut nama hero
+- **Rencana:** isi bar HP digambar sendiri, senjata berpangkal di kepalan tangan, peta kampung dirombak (sungai melintang, jembatan asli, beberapa rumah warga, bedengan ladang), nama hero menjadi Arka, ternak babi dihapus.
+- **Mulai:** 2026-11-05 21:30 +07:00
+- **Catatan:** WL-012 milik opdi masih tercantum aktif untuk audio; berkas audio tidak disentuh.
+- **Linimasa:**
+  - 21:30 — claude-opus — IN_PROGRESS: mulai dari temuan tes pengguna
+  - 22:10 — claude-opus — RESOLVED: tes lulus dan tampilan dicek; belum di-commit
+
+### WL-017 — Perbaikan 13 temuan tes pengguna (level 1-4 dan boss 1)
+- **Agen:** claude-opus
+- **Status:** RESOLVED
+- **Area/klaim:** `public/mh4/`, `public/assets/mh4/v2/`, `scripts/prepare_assets_mh4.js`, `tests/mh4_*`
+- **Ringkasan:** Gerbang soal menjadi balok angka di dunia dengan kertas coretan. Lima jenis musuh
+  dengan pola berbeda. Bayu 1:1 dengan tile (hitbox 12x20). Senjata tampak di tangan, ikon di toko,
+  arc sama dengan kotak serangan. Boss lebih lambat dan memakai sprite serangan. Peti penyimpanan,
+  bekal pilihan, hasil ternak berkala, pagar tersambung, animasi hewan dan menanam diperbaiki.
+- **Tes:** `npm run test:mh4` 113 lulus, `npm run test:snapshot` 8 hash sama, tampilan browser.
+- **Mulai:** 2026-11-05 20:15 +07:00
+- **Update terakhir:** 2026-11-05 21:30 +07:00
+- **Resolved:** 2026-11-05 21:30 +07:00
+- **Catatan:** Entri ditulis setelah kode diubah. Belum di-commit. Belum diuji lewat permainan penuh.
+- **Linimasa:**
+  - 21:30 — claude-opus — RESOLVED: perintah pengguna berisi 13 temuan.
+
 ### WL-016 — Paket 4: markas top down, cerita, dan visual baru
 - **Agen:** claude-opus
 - **Status:** RESOLVED

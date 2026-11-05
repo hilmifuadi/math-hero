@@ -55,6 +55,7 @@ vm.createContext(sandbox);
 
 // Urutan <script> diambil dari halaman, jadi berkas baru otomatis ikut diuji.
 for (const [, src] of html.matchAll(/<script src="([^"]+)"/g)) {
+  if (/gsap|Draggable|scratchpad/.test(src)) continue; // butuh DOM sungguhan
   const rel = path.posix.normalize('mh4/' + src);
   vm.runInContext(read(rel), sandbox, { filename: rel });
 }
@@ -74,14 +75,14 @@ dbg.start();
 runFrames(2);
 assert.strictEqual(dbg.mode, 'base', 'setelah judul masuk markas');
 assert.ok(!getEl('dialog').classList.contains('hidden'), 'pertama kali main ada cerita pembuka');
-for (let i = 0; i < 6 && !getEl('dialog').classList.contains('hidden'); i++) getEl('dialog').click();
+for (let i = 0; i < 12 && !getEl('dialog').classList.contains('hidden'); i++) getEl('dialog').click();
 assert.ok(getEl('dialog').classList.contains('hidden'), 'cerita selesai');
-dbg.base.x = 12 * 16 + 8; dbg.base.y = 12 * 16;
+dbg.base.x = 10 * 16; dbg.base.y = 12 * 16 + 8;
 dbg.setInput({ jump: true });
 runFrames(3);
 dbg.setInput({ jump: false });
 assert.ok(!getEl('dialog').classList.contains('hidden'), 'tombol aksi membuka dialog Kakek');
-for (let i = 0; i < 6 && !getEl('dialog').classList.contains('hidden'); i++) getEl('dialog').click();
+for (let i = 0; i < 12 && !getEl('dialog').classList.contains('hidden'); i++) getEl('dialog').click();
 console.log('ok judul, cerita, dan dialog di markas berjalan');
 dbg.startLevel(0);
 runFrames(3);
@@ -103,6 +104,7 @@ for (const type of ['checkpoint', 'reward', 'respawn', 'hurt', 'weapon', 'bossPh
   g.events.push({ type, why: 'duri', nama: 'Pedang', id: 2, kind: 'melee' });
   runFrames(1);
 }
+getEl('prskip').click();
 console.log('ok semua event suara berjalan tanpa error');
 
 const audioSrc = read('mh4/js/audio.js');

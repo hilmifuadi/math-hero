@@ -24,10 +24,10 @@ const level = (row, tier) => ({
   ],
 });
 
-ok('tiga tipe musuh terdaftar dengan perilaku unik', () => {
-  assert.strictEqual(Enemies.ORDER.length, 3);
+ok('lima tipe musuh terdaftar dengan perilaku unik', () => {
+  assert.strictEqual(Enemies.ORDER.length, 5);
   const behaviors = Enemies.ORDER.map((id) => Enemies.get(id).behavior).sort();
-  assert.deepStrictEqual(behaviors, ['jump', 'shoot', 'walk']);
+  assert.deepStrictEqual(behaviors, ['charge', 'fly', 'jump', 'shoot', 'walk']);
   assert.strictEqual(Enemies.byChar('e').id, 'walker');
   assert.strictEqual(Enemies.byChar('a').id, 'jumper');
   assert.strictEqual(Enemies.byChar('g').id, 'shooter');
@@ -101,6 +101,62 @@ ok('kontak musuh mengurangi HP dan bisa diinjak', () => {
   g.invuln = 0;
   tick(g, {});
   assert.ok(!e.alive || e.dead, 'musuh harus kalah saat diinjak');
+});
+
+ok('lendir tebal: lebih lambat, HP tertinggi, dan tidak kalah sekali injak', () => {
+  const slime = Enemies.get('jumper');
+  assert.ok(slime.hp > Enemies.get('walker').hp * 2, 'HP lendir jauh lebih banyak');
+  assert.ok(slime.speed < Enemies.get('walker').speed, 'lendir lebih lambat');
+  const g = Sim.create(level('.a................', 1));
+  const e = g.enemies[0];
+  g.p.x = e.x; g.p.y = e.y - g.p.h + 6; g.p.vy = 120; g.invuln = 0;
+  tick(g, {});
+  assert.ok(e.alive && e.hp < e.maxHp, 'injakan melukai, tidak mengalahkan');
+});
+
+ok('kelelawar terbang, menukik ke hero, dan tidak bisa diinjak', () => {
+  const g = Sim.create(level('....f.............', 3));
+  const e = g.enemies[0];
+  frames(g, 2);
+  const y0 = g.enemies[0].homeY;
+  assert.ok(y0 < g.p.y + g.p.h, 'melayang di atas tanah');
+  let dived = false;
+  for (let i = 0; i < 400; i++) { g.invuln = 5; tick(g); if (e.state === 'dive') dived = true; }
+  assert.ok(dived, 'kelelawar menukik saat hero dekat');
+  g.invuln = 0;
+  g.p.x = e.x; g.p.y = e.y - g.p.h + 6; g.p.vy = 120;
+  const hp = g.hp;
+  tick(g, {});
+  assert.ok(e.alive && g.hp < hp, 'injakan melukai hero, bukan kelelawar');
+});
+
+ok('orc menyeruduk setelah ancang-ancang, pusing, lalu baru bisa diinjak', () => {
+  const g = Sim.create(level('......r...........', 3));
+  const e = g.enemies[0];
+  g.p.x = e.x - 60;
+  const states = new Set();
+  for (let i = 0; i < 300; i++) {
+    g.invuln = 5; g.p.x = 30; g.p.y = e.y + e.h - g.p.h;
+    tick(g);
+    states.add(e.state);
+    if (e.state === 'stun') break;
+  }
+  assert.ok(states.has('wind') && states.has('dash') && states.has('stun'), 'ancang-ancang, seruduk, pusing: ' + [...states]);
+  g.invuln = 0;
+  g.p.x = e.x; g.p.y = e.y - g.p.h + 6; g.p.vy = 120;
+  tick(g, {});
+  assert.ok(!e.alive, 'kalah saat diinjak ketika pusing');
+});
+
+ok('musuh tidak jatuh ke jurang sebelum hero datang', () => {
+  const g = Sim.create({
+    tier: 1,
+    map: ['........................................', '........................................', 'S..................................e....E'.padEnd(40, '.'), '#############################...........'.padEnd(29, '#').padEnd(40, '#')],
+  });
+  const y0 = g.enemies[0].y, x0 = g.enemies[0].x;
+  frames(g, 120);
+  assert.strictEqual(g.enemies[0].x, x0, 'belum aktif saat hero jauh');
+  assert.strictEqual(g.enemies[0].y, y0);
 });
 
 console.log(n + ' tes musuh MH4 lulus.');

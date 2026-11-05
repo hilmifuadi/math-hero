@@ -142,7 +142,7 @@ ok('hasil level memberi koin, menyimpan bintang terbaik, dan membuka level', () 
   assert.ok(!Progress.unlocked(p, 2));
   const first = Progress.gain(p, { levelId: 1, stars: 3, chest: true, boss: false }, 20);
   assert.ok(first.first);
-  assert.strictEqual(first.coins, 3 * 5 + 30 + 20);
+  assert.strictEqual(first.coins, 3 * 1 + 12 + 10);
   assert.strictEqual(p.koin, first.coins);
   assert.strictEqual(p.best[1].stars, 3);
   assert.strictEqual(p.totalStars, 3);
@@ -152,7 +152,7 @@ ok('hasil level memberi koin, menyimpan bintang terbaik, dan membuka level', () 
   const repeat = Progress.gain(p, { levelId: 1, stars: 1, chest: false }, 30);
   assert.ok(!repeat.first);
   assert.strictEqual(p.best[1].stars, 3, 'bintang tidak turun saat diulang');
-  assert.strictEqual(repeat.coins, 5, 'ulangan hanya memberi koin bintang');
+  assert.strictEqual(repeat.coins, 0, 'ulangan tanpa rekor baru tidak memberi koin');
   assert.ok(p.best[1].chest, 'peti yang pernah dibuka tetap tercatat');
 });
 
@@ -161,7 +161,7 @@ ok('koin dari hasil level ikut pengali Magnet Koin', () => {
   p.owned.push('magnet-koin');
   p.equipped.jimat = 'magnet-koin';
   const res = Progress.gain(p, { levelId: 1, stars: 2, chest: false, boss: false }, 5);
-  assert.strictEqual(res.coins, Math.round((10 + 20) * 1.25));
+  assert.strictEqual(res.coins, Math.round((2 + 10) * 1.25));
 });
 
 ok('penyimpanan lokal bolak-balik dan data rusak tidak menjatuhkan game', () => {
@@ -266,6 +266,18 @@ ok('simpanan lama dimigrasi: poin dihitung dari level selesai, data palsu dibuan
   assert.ok(bad.weapons.includes('palu') && !bad.weapons.includes('senapan-ajaib'));
   assert.strictEqual(bad.gear.melee, 'pedang', 'tombak belum dimiliki');
   assert.strictEqual(bad.gear.ranged, 'blaster', 'palu bukan senjata jauh');
+});
+
+ok('pemasukan level lebih kecil dari ladang dan tidak bisa ditimbun', () => {
+  const Levels = require('../public/mh4/js/gen/levels.js');
+  const Farm = require('../public/mh4/js/base/farm.js');
+  const p = Progress.newProfile('A');
+  const stars = Levels.LEVELS[0].map.join('').split('*').length - 1;
+  const res = Progress.gain(p, { levelId: 1, stars, chest: true, boss: false });
+  const net = Farm.ITEMS.gandum.jual - Farm.CROPS.gandum.price;
+  assert.ok(res.coins <= net * 3, `satu level penuh (${res.coins}) setara paling banyak tiga petak gandum (${net} per petak)`);
+  const again = Progress.gain(p, { levelId: 1, stars, chest: true, boss: false });
+  assert.strictEqual(again.coins, 0, 'main ulang tanpa rekor baru tidak memberi koin');
 });
 
 console.log(`\n${n} tes progresi MH4 lulus.`);

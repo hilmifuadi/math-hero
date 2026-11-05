@@ -28,7 +28,9 @@ ok('siklus ladang: tanam, siram, tumbuh saat ganti hari, panen', () => {
   }
   assert.strictEqual(Farm.action(b, 0), 'panen');
   const res = Farm.harvest(b, 0);
-  assert.ok(res.ok && res.bekal === 1 && res.koin > 0);
+  assert.ok(res.ok && res.item === 'wortel');
+  assert.strictEqual(b.items.wortel, 1, 'hasil masuk peti');
+  assert.strictEqual(b.pack, 'wortel', 'makanan pertama jadi bekal');
   assert.strictEqual(b.plots[0].crop, null, 'petak kosong lagi');
   assert.strictEqual(Farm.useBekal(b), 10);
   assert.strictEqual(Farm.useBekal(b), 0, 'bekal habis');
@@ -51,8 +53,10 @@ ok('benih dan tidur dibatasi', () => {
 ok('profil lama mendapat markas baru, data aneh dibuang', () => {
   const old = Progress.normalize({ uid: 'abcdef0123456789' });
   assert.strictEqual(old.base.plots.length, Farm.PLOTS);
-  const bad = Progress.normalize({ uid: 'abcdef0123456789', base: { bekal: 99, plots: [{ crop: 'racun', stage: 2 }, { crop: 'wortel', stage: 99 }] } });
-  assert.strictEqual(bad.base.bekal, Farm.MAX_BEKAL);
+  const bad = Progress.normalize({ uid: 'abcdef0123456789', base: { bekal: 3, items: { racun: 9 }, pack: 'gandum', plots: [{ crop: 'racun', stage: 2 }, { crop: 'wortel', stage: 99 }] } });
+  assert.strictEqual(bad.base.items.wortel, 3, 'bekal lama pindah ke peti');
+  assert.strictEqual(bad.base.pack, 'wortel', 'gandum bukan bekal');
+  assert.strictEqual(bad.base.items.racun, undefined);
   assert.strictEqual(bad.base.plots[0].crop, null);
   assert.strictEqual(bad.base.plots[1].stage, Farm.RIPE);
 });
@@ -109,11 +113,13 @@ ok('rute cerita lengkap dan boss menjadi puncak bab', () => {
   assert.deepStrictEqual(Story.ROUTE.slice().sort((a, b) => a - b), ids, 'semua misi ada di rute');
   const p = Progress.newProfile('A');
   assert.ok(Progress.unlocked(p, 1));
-  for (const id of [1, 2, 3, 4]) p.best[id] = { done: true, stars: 0 };
-  assert.ok(Progress.unlocked(p, 15), 'boss 1 terbuka setelah level 4');
-  assert.ok(!Progress.unlocked(p, 5), 'bab 2 menunggu boss 1');
+  for (const id of [1, 2, 3, 18]) p.best[id] = { done: true, stars: 0 };
+  assert.ok(Progress.unlocked(p, 15), 'boss 1 terbuka setelah bab 1 selesai');
+  assert.ok(!Progress.unlocked(p, 4), 'bab 2 menunggu boss 1');
   p.best[15] = { done: true, stars: 0 };
-  assert.ok(Progress.unlocked(p, 5));
+  assert.ok(Progress.unlocked(p, 4));
+  for (const ch of Story.CHAPTERS.slice(0, -1)) assert.ok(Levels.ALL.find((l) => l.id === ch.misi[ch.misi.length - 1]).boss, ch.nama + ' ditutup boss');
+  for (const ch of Story.CHAPTERS) assert.ok(ch.misi.length <= 5, ch.nama + ' tidak terlalu panjang');
 });
 
 ok('kabut kampung menipis dan dialog mengikuti kemajuan', () => {
@@ -127,6 +133,114 @@ ok('kabut kampung menipis dan dialog mengikuti kemajuan', () => {
   for (const id of Story.ROUTE) p.best[id] = { done: true, stars: 0 };
   assert.notStrictEqual(Story.linesFor('kakek', p), first, 'dialog berubah');
   for (const id of ['penjaga-mesin', 'raja-bandit']) assert.ok(Story.BOSS_LINES[id].before.length && Story.BOSS_LINES[id].after.length);
+});
+
+ok('ternak memberi hasil berkala tanpa perawatan', () => {
+  const b = Farm.newBase();
+  assert.ok(!Farm.animalReady(b, 'cow'), 'sapi belum siap di hari 1');
+  while (!Farm.animalReady(b, 'cow')) Farm.nextDay(b);
+  assert.strictEqual(b.day, 3, 'sapi siap tiap tiga hari');
+  const res = Farm.collectAnimal(b, 'cow');
+  assert.ok(res.ok && b.items.susu === 1);
+  assert.ok(!Farm.animalReady(b, 'cow'), 'harus menunggu lagi');
+  assert.ok(!Farm.collectAnimal(b, 'cow').ok);
+});
+
+ok('peti: pilih bekal dan jual hasil', () => {
+  const b = Farm.newBase();
+  const p = { koin: 0, base: b };
+  b.items.susu = 1; b.items.wol = 1;
+  assert.ok(!Farm.setPack(b, 'wol'), 'wol bukan makanan');
+  assert.ok(Farm.setPack(b, 'susu'));
+  assert.ok(Farm.sell(p, 'wol').ok);
+  assert.strictEqual(p.koin, Farm.ITEMS.wol.jual);
+  assert.strictEqual(Farm.useBekal(b), 20, 'susu menambah 20 HP');
+  assert.strictEqual(b.pack, null);
+});
+
+ok('hewan yang siap bisa diambil lewat tombol aksi', () => {
+  const g = Base.create('kampung');
+  g.animalReady = (k) => k === 'cow';
+  const cow = g.animals.find((a) => a.sprite === 'cow');
+  g.x = cow.x; g.y = cow.y;
+  Base.update(g, dt, { act: true });
+  const ev = Base.takeEvents(g);
+  assert.ok(ev.length === 1 && ev[0].id === 'ternak' && ev[0].kind === 'cow');
+});
+
+ok('animasi hewan tidak mundur: arah gambar mengikuti arah jalan', () => {
+  const g = Base.create('kampung');
+  for (let i = 0; i < 300; i++) Base.update(g, dt, {});
+  for (const a of g.animals) {
+    if (a.wait <= 0) assert.strictEqual(a.flip, a.dir > 0, a.sprite);
+  }
+});
+
+ok('bangun kampung: beli, peta berubah, semua tempat tetap bisa didatangi', () => {
+  const p = Progress.newProfile('A');
+  p.koin = 100;
+  assert.strictEqual(Farm.buyBuild(p, 'sungai').reason, 'koin-kurang');
+  p.koin = 99999;
+  for (const b of Farm.BUILDS) assert.ok(Farm.buyBuild(p, b.id).ok, b.id);
+  assert.strictEqual(Farm.buyBuild(p, 'titu').reason, 'sudah');
+  assert.strictEqual(p.koin, 99999 - Farm.BUILDS.reduce((s, b) => s + b.price, 0));
+  assert.deepStrictEqual(Farm.normalize(JSON.parse(JSON.stringify(p.base))).built, Farm.BUILD_IDS, 'tersimpan');
+  assert.deepStrictEqual(Farm.normalize({ built: ['altar', 'palsu'] }).built, ['altar']);
+  // Ternak tambahan menggandakan hasil kandang.
+  p.base.day = 10;
+  assert.strictEqual(Farm.collectAnimal(p.base, 'cow').n, 2);
+  const full = World.kampung(Farm.BUILD_IDS);
+  assert.ok(full.animals.length === 8, 'ternak bertambah');
+  assert.ok(full.objects.length > World.kampung([]).objects.length + 20, 'objek bertambah');
+  // Peta penuh: titik mulai, pulang misi, papan bangun, altar, dan semua warga tetap terjangkau.
+  const seen = new Set(), key = (x, y) => x + ',' + y;
+  for (const at of [full.spawn, full.fromMission]) {
+    const start = [Math.round(at.x / 8) * 8, Math.round(at.y / 8) * 8];
+    assert.ok(!Base.blocked(full, start[0], start[1]), 'titik bebas');
+    const st = [start]; seen.add(key(...start));
+    while (st.length) {
+      const [x, y] = st.pop();
+      for (const [a, b] of [[x + 8, y], [x - 8, y], [x, y + 8], [x, y - 8]]) {
+        if (seen.has(key(a, b)) || Base.blocked(full, a, b)) continue;
+        seen.add(key(a, b)); st.push([a, b]);
+      }
+    }
+  }
+  for (const s of full.spots) {
+    const reach = [...seen].some((k) => { const [x, y] = k.split(',').map(Number); return x - 8 < s.x + s.w && x + 8 > s.x && y - 8 < s.y + s.h && y + 8 > s.y; });
+    assert.ok(reach, s.id + ' terjangkau di kampung penuh');
+  }
+});
+
+ok('Titu mengikuti Arka, tertidur saat Arka diam, dan bisa dielus', () => {
+  const g = Base.create('kampung', null, ['titu']);
+  assert.ok(g.pet, 'Titu ada');
+  for (let i = 0; i < 120; i++) Base.update(g, dt, { right: true });
+  assert.ok(Math.hypot(g.x - g.pet.x, g.y - g.pet.y) < 50, 'mengikuti');
+  g.x = 22 * World.T; g.y = 21 * World.T;
+  for (let i = 0; i < 60 * 8; i++) Base.update(g, dt, {});
+  assert.ok(g.pet.sleep, 'tertidur');
+  assert.strictEqual(Base.nearest(g).id, 'titu', 'bisa dielus');
+  assert.strictEqual(Base.create('kampung').pet, null, 'tanpa beli tidak ada');
+  const Talk = require('../public/mh4/js/base/talk.js');
+  const prof = Progress.newProfile('A');
+  prof.base.built = ['titu'];
+  let heard = false;
+  const memo = {};
+  for (let i = 0; i < 8; i++) if (Talk.compose('sari', { hour: 10, profile: prof }, memo).some((l) => /Titu/.test(l[1]))) heard = true;
+  assert.ok(heard, 'warga menyebut Titu');
+});
+
+ok('senjata pamungkas hanya bisa dibeli setelah tamat', () => {
+  const p = Progress.newProfile('A');
+  p.koin = 20000;
+  assert.strictEqual(Progress.buyWeapon(p, 'bumerang').reason, 'terkunci');
+  p.best[Story.FINALE] = { done: true, stars: 0 };
+  assert.ok(Progress.buyWeapon(p, 'bumerang').ok);
+  assert.strictEqual(p.koin, 15000);
+  assert.ok(Progress.equipWeapon(p, 'bumerang').ok);
+  assert.strictEqual(Progress.buyWeapon(p, 'pedang').reason, 'tidak-dijual');
+  assert.ok(Progress.normalize(JSON.parse(JSON.stringify(p))).weapons.includes('bumerang'), 'tersimpan');
 });
 
 console.log(`\n${n} tes markas MH4 lulus.`);

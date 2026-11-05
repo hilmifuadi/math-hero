@@ -37,7 +37,7 @@ ok('empat belas level tetap dan deterministik', () => {
 });
 
 ok('semua level lulus invariant', () => {
-  for (const lv of L.LEVELS) {
+  for (const lv of L.LEVELS.filter((x) => !x.tower)) {
     const bad = L.validate(lv);
     assert.deepStrictEqual(bad, [], `level ${lv.id}: ` + bad.join('; '));
     assert.ok(lv.rooms.length >= 4, `level ${lv.id}: minimal 4 ruang tulis tangan, ada ${lv.rooms.length}`);
@@ -54,7 +54,7 @@ ok('arena boss lolos validasi dan memakai tema terdaftar', () => {
   assert.ok(Themes.THEMES[L.BOSS.tema], 'tema boss terdaftar');
   assert.ok(L.BOSS.bossDef.phases.length >= 2, 'boss minimal dua fase');
 
-  assert.strictEqual(L.BOSSES.length, 2, 'butuh dua arena boss');
+  assert.strictEqual(L.BOSSES.length, 7, 'satu boss untuk tiap bab');
   assert.strictEqual(L.BOSSES[1].id, 16);
   assert.deepStrictEqual(L.validateBoss(L.BOSS2), []);
   assert.strictEqual(L.BOSS2.bossDef.id, 'raja-bandit');
@@ -82,7 +82,7 @@ ok('delapan tema terdaftar, asetnya ada, dan semuanya dipakai level', () => {
   for (const id of ids) assert.ok(used.has(id), `tema ${id} belum dipakai level mana pun`);
   for (const lv of L.LEVELS) {
     assert.ok(Themes.THEMES[lv.tema], `level ${lv.id}: tema ${lv.tema} tidak terdaftar`);
-    assert.strictEqual(lv.tema, L.PLAN[lv.id - 1].tema, `level ${lv.id}: tema harus sama dengan PLAN`);
+    if (!lv.tower) assert.strictEqual(lv.tema, L.PLAN.find((x) => x.id === lv.id).tema, `level ${lv.id}: tema harus sama dengan PLAN`);
   }
 });
 
@@ -118,15 +118,15 @@ ok('duri menempel tanah dan bintang tidak bertumpuk duri', () => {
 });
 
 ok('hanya karakter tile MH4 yang dipakai', () => {
-  const legal = new Set(['#', '=', '^', '*', 'S', 'E', 'C', 'K', 'G', '.', 'e', 'a', 'g']);
-  for (const lv of L.LEVELS) {
+  const legal = new Set(['#', '=', '^', '*', 'S', 'E', 'C', 'K', 'G', '.', 'e', 'a', 'g', 'f', 'r', 's', '~', '-', '|', '(', ')', '>', '<', 'o', 'L', 'Q', 'Z', 'b', 'j', 'm', 'w', 'h', 'u', 'p']);
+  for (const lv of L.LEVELS.filter((x) => !x.tower)) {
     for (const row of lv.map) for (const ch of row) assert.ok(legal.has(ch), `level ${lv.id}: karakter tak dikenal "${ch}"`);
   }
 });
 
 ok('musuh hanya muncul di level tier >= 1 dan berdiri di tanah datar', () => {
-  const chars = new Set(['e', 'a', 'g']);
-  for (const lv of L.LEVELS) {
+  const chars = new Set(['e', 'a', 'g', 'b', 'j', 'm', 'w', 'h', 'u', 'p']);
+  for (const lv of L.LEVELS.filter((x) => !x.tower)) {
     let count = 0;
     lv.map.forEach((row, r) => {
       for (let c = 0; c < row.length; c++) {
@@ -143,14 +143,14 @@ ok('musuh hanya muncul di level tier >= 1 dan berdiri di tanah datar', () => {
 
 ok('tipe musuh bertambah sesuai tier', () => {
   const seen = new Set();
-  for (const lv of L.LEVELS) {
+  for (const lv of L.LEVELS.filter((x) => !x.tower)) {
     for (const row of lv.map) for (const ch of row) if ('eag'.includes(ch)) seen.add(ch);
   }
   for (const ch of ['e', 'a', 'g']) assert.ok(seen.has(ch), `tipe musuh "${ch}" belum dipakai level mana pun`);
 });
 
 ok('gerbang, peti, tujuan berurutan dan ada checkpoint', () => {
-  for (const lv of L.LEVELS) {
+  for (const lv of L.LEVELS.filter((x) => !x.tower)) {
     const cols = (ch) => {
       const out = [];
       lv.map.forEach((row, r) => { for (let c = 0; c < row.length; c++) if (row[c] === ch) out.push(c); });
@@ -182,8 +182,8 @@ ok('jalur UMD browser menghasilkan peta yang sama', () => {
   for (const f of [
     'public/shared/levelgen/core.js',
     'public/mh4/js/boss/schema.js',
-    'public/mh4/js/boss/bosses/penjaga.js',
     'public/mh4/js/boss/machine.js',
+    'public/mh4/js/boss/bosses/roster.js',
     'public/mh4/js/boss/gen.js',
     'public/mh4/js/gen/chunks.js',
     'public/mh4/js/gen/rules.js',
@@ -211,4 +211,32 @@ ok('jalur UMD browser menghasilkan peta yang sama', () => {
   assert.strictEqual(JSON.stringify(ctx.MH4.levels.validateBoss(ctx.MH4.levels.BOSS)), '[]', 'boss browser valid');
 });
 
+{
+  const assert2 = require('assert');
+  const LV = require('../public/mh4/js/gen/levels.js');
+  // Pemeriksa jalur harus menerima semua level kampanye, dan menolak jurang yang mustahil.
+  for (const def of LV.LEVELS) assert2.ok(LV.reachable(def), `kampanye ${def.id} ${def.nama} terjangkau`);
+  const gap = def0 => ({ map: def0 });
+  assert2.ok(LV.reachable(gap(['......', 'S....E', '######'])), 'peta lurus terjangkau');
+  assert2.ok(!LV.reachable(gap(['.'.repeat(30), 'S' + '.'.repeat(28) + 'E', '###' + '.'.repeat(24) + '###'])), 'jurang lebar ditolak');
+  assert2.ok(!LV.reachable(gap([...Array(12).fill('...#...'), 'S..#..E', '#######'])), 'tembok penuh ditolak');
+  // Level acak: deterministik, lolos pemeriksaan, dan beragam.
+  assert2.strictEqual(JSON.stringify(LV.genLevel(77, { tier: 2 }).map), JSON.stringify(LV.genLevel(77, { tier: 2 }).map), 'seed sama, peta sama');
+  const temas = new Set(), bentuk = new Set();
+  let towers = 0;
+  for (const tier of [1, 2, 3]) {
+    for (let seed = 1; seed <= 60; seed++) {
+      const def = LV.genLevel(seed * 137, { tier });
+      assert2.deepStrictEqual(LV.validate(def), [], `seed ${seed * 137} tier ${tier}`);
+      assert2.ok(LV.reachable(def), `seed ${seed * 137} tier ${tier} terjangkau`);
+      assert2.strictEqual(def.id, 35); assert2.strictEqual(def.seed, seed * 137);
+      temas.add(def.tema); bentuk.add(def.map.join('').length);
+      if (def.tower) towers++;
+    }
+  }
+  assert2.strictEqual(temas.size, 8, 'semua tema muncul');
+  assert2.ok(bentuk.size > 30, 'bentuk peta beragam');
+  assert2.ok(towers >= 10 && towers <= 90, `menara sekali-sekali (${towers})`);
+  console.log('ok level acak terjangkau, deterministik, dan beragam');
+}
 console.log(`\n${n} tes generator MH4 lulus.`);

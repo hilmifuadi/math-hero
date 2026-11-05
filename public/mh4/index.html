@@ -3,16 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Math Hero 4: Bayu dan Kabut Kacau</title>
+<title>Math Hero 4: Arka dan Kabut Kacau</title>
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #08120d; overflow: hidden; }
-  body { display: flex; align-items: center; justify-content: center; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: #eaf6ee; }
+  body { display: flex; align-items: center; justify-content: center; font-family: 'Kleintenna', system-ui, sans-serif; color: #eaf6ee; }
   /* --u = 1/640 lebar kanvas. Teks kartu memakai em dari #wrap supaya ikut membesar di laptop. */
-  @font-face { font-family: 'Pixelzone'; src: url('../assets/pixelzone-font/Pixelzone-E4MV4.ttf'); font-display: swap; }
+  @font-face { font-family: 'Kleintenna'; src: url('../assets/kleintenna-font/Kleintenna-Bow.ttf') format('truetype'); font-display: swap; }
+  button { font-family: inherit; }
   #wrap.basemode #attack, #wrap.basemode #swap { display: none; }
-  #wrap { --u: calc(min(100vw, 177.78vh) / 640); position: relative; width: min(100vw, 177.78vh); aspect-ratio: 16 / 9; background: #0d1b13; border-radius: 10px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.55); font-size: clamp(14px, calc(var(--u) * 9), 26px); }
+  #wrap { --u: calc(min(100vw, 177.78vh) / 640); position: relative; width: min(100vw, 177.78vh); aspect-ratio: 16 / 9; background: #0d1b13; border-radius: 10px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.55); font-size: clamp(15px, calc(var(--u) * 10), 28px); }
   canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; image-rendering: crisp-edges; }
   #menubtn { position: absolute; top: calc(var(--u) * 42); right: calc(var(--u) * 10); z-index: 8; min-width: 44px; min-height: 44px; border: 1px solid rgba(255,255,255,.35); background: rgba(8,20,14,.72); color: #fff; border-radius: 10px; padding: .3em .7em; font-size: 1em; font-weight: 800; cursor: pointer; }
   .chips { display: grid; grid-template-columns: repeat(8, 1fr); gap: .4em; }
@@ -40,7 +41,8 @@
   .btn.swp { background: rgba(40,90,150,.55); font-size: 22px; }
   #modal, #win, #menu, #rotate, #newweapon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(4,12,8,.78); z-index: 10; padding: 8px; }
   #title, #board { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(30,18,30,.45); z-index: 10; padding: 8px; }
-  #dialog { position: absolute; inset: auto 0 0 0; z-index: 12; padding: 8px; display: flex; justify-content: center; cursor: pointer; }
+  #dialog { position: absolute; inset: 0; z-index: 12; padding: 8px; display: flex; justify-content: center; align-items: flex-end; cursor: pointer; }
+  .ic { image-rendering: pixelated; background-repeat: no-repeat; margin-bottom: .2em; }
   #modal.hidden, #win.hidden, #menu.hidden, #rotate.hidden, #shop.hidden, #newweapon.hidden, #title.hidden, #board.hidden, #dialog.hidden, .hidden { display: none !important; }
   .dcard { width: min(40em, 98%); display: flex; gap: .8em; }
   #dface { flex: 0 0 auto; width: 3.6em; height: 3.6em; background-size: 600% auto; background-position: 0 0; image-rendering: pixelated; }
@@ -49,7 +51,7 @@
   #dchoices { display: grid; gap: .35em; margin-top: .5em; }
   #dchoices .choice { font-size: .95em; text-align: left; }
   #dnext { font-size: .8em; color: #5a3a1c; text-align: right; }
-  .logo { font-family: 'Pixelzone', system-ui, sans-serif; font-size: 4.2em; color: #4a2208; line-height: 1; }
+  .logo { font-size: 3.2em; font-weight: 800; color: #4a2208; line-height: 1; }
   #wrap.titlemode #menubtn { display: none; }
   .logosub { font-weight: 800; color: #7a3d00; margin: .3em 0 .8em; }
   .chip.done { border-color: #5f8f2e; background: #6d4a22; }
@@ -93,7 +95,64 @@
   .big { font-size: 2.6em; letter-spacing: 4px; color: #ffd84a; margin: .1em 0 .2em; }
   .sub { font-size: .95em; color: #9fc9b0; }
   #shop { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(4,12,8,.86); z-index: 11; padding: 8px; }
-  .shopcard { width: min(52em, 97%); }
+  .shopcard { width: min(58em, 98%); }
+  /* Menu jeda: tombol utama besar, sisanya berikon. */
+  #menu .card { width: min(26em, 92%); }
+  .menurow { display: grid !important; grid-template-columns: 1fr 1fr; gap: .45em !important; }
+  #menuclose { grid-column: 1 / -1; font-size: 1.25em !important; min-height: 52px; }
+  #restart::before { content: '\21BB  '; } #home::before { content: '\2302  '; } #shopbtn::before { content: '\2694  '; }
+  #scorebtn::before { content: '\2605  '; } #sound::before { content: '\266A  '; }
+  #sound { grid-column: 1 / -1; }
+  #keysbtn { width: 100%; margin-top: .45em; min-height: 36px; font-size: .9em; }
+  /* Perlengkapan: Arka di tengah, senjata di kiri dan kanan. */
+  .gear { display: grid; grid-template-columns: 1fr minmax(12em, 1fr) 1fr; gap: .6em; align-items: stretch; }
+  .gearcol { display: flex; flex-direction: column; gap: .35em; justify-content: space-between; background: rgba(58,33,18,.18); border: 2px solid rgba(58,33,18,.35); border-radius: 8px; padding: .4em; }
+  .gearmid { display: flex; flex-direction: column; align-items: center; gap: .3em; justify-content: space-between; }
+  .gearlabel { font-size: .72em; font-weight: 800; letter-spacing: .5px; color: #4a2208; text-transform: uppercase; }
+  .tiles { display: flex; flex-wrap: wrap; gap: .3em; justify-content: center; }
+  .tile { position: relative; width: 50px; height: 50px; padding: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,240,205,.72); border: 2px solid #6d4322; border-radius: 6px; cursor: pointer; }
+  .tile:hover { background: rgba(255,250,230,.95); }
+  .tile.on { background: rgba(170,225,120,.9); border-color: #2f7d3a; }
+  .tile.sel { outline: 3px solid #ffd84a; outline-offset: 1px; }
+  .tile.locked { background: rgba(60,40,28,.55); }
+  .tile.locked .ic { filter: brightness(0) opacity(.55); }
+  .tile .badge { position: absolute; right: -1px; bottom: -1px; font-size: .62em; font-weight: 800; color: #fff3d6; background: #6d4322; border-radius: 3px; padding: 0 3px; line-height: 1.35; }
+  .tile.on .badge { background: #2f7d3a; }
+  .stage { position: relative; width: 12em; height: 112px; }
+  .stage .floor { position: absolute; left: 50%; bottom: 2px; width: 92px; height: 18px; margin-left: -46px; border-radius: 50%; background: rgba(58,33,18,.35); }
+  .stage .arka { position: absolute; left: 50%; bottom: -6px; width: 128px; height: 128px; margin-left: -64px; background: url(../assets/mh4/v2/hero/player.png) 0 0 / 768px auto; image-rendering: pixelated; animation: arkaidle 1.1s steps(6) infinite; }
+  @keyframes arkaidle { to { background-position-x: -768px; } }
+  .stage .hold { position: absolute; bottom: 22px; }
+  .stage .hold.l { left: 0; } .stage .hold.r { right: 0; }
+  .statrow { display: flex; gap: .35em; margin-top: .45em; }
+  .statbtn { flex: 1; display: flex; justify-content: space-between; align-items: center; gap: .4em; padding: .2em .5em; min-height: 34px; font: inherit; font-size: .85em; font-weight: 800; color: #2f1a0b; background: rgba(255,240,205,.72); border: 2px solid #6d4322; border-radius: 6px; cursor: pointer; }
+  .statbtn.sel { outline: 3px solid #ffd84a; }
+  .statpips { display: flex; gap: 2px; }
+  .statpips i { width: 7px; height: 9px; background: rgba(60,30,10,.22); border-radius: 1px; }
+  .statpips i.f { background: #b5451f; }
+  .gearinfo { display: flex; align-items: center; gap: .7em; margin-top: .45em; min-height: 66px; padding: .35em .6em; background: rgba(58,33,18,.82); color: #fff3d6; border-radius: 8px; }
+  .gearinfo .inm { font-weight: 800; font-size: 1.1em; color: #ffd84a; }
+  .gearinfo .ids { font-size: .85em; line-height: 1.25; }
+  .gearinfo .wbar { color: #fff3d6; }
+  .gearinfo .wbar i { background: rgba(255,240,205,.25); }
+  .gearinfo .wbar i.f { background: #ffb066; }
+  .gearinfo .ibtn { margin-left: auto; flex: none; min-height: 44px; min-width: 7.5em; font: inherit; font-weight: 800; color: #fff; background: #3f7d3a; border: 2px solid #1f4a22; border-radius: 6px; cursor: pointer; }
+  .gearinfo .ibtn:disabled { background: #7d6a55; cursor: default; }
+  @media (max-height: 460px) { .tile { width: 42px; height: 42px; } .stage { height: 84px; } .stage .arka { transform: scale(.75); transform-origin: 50% 100%; } }
+  #pr { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(10,6,14,.6); z-index: 30; }
+  #pr.hidden { display: none; }
+  .prcard { text-align: center; }
+  #prtext { font-size: 1.05em; line-height: 1.35; margin-bottom: .35em; }
+  #prhint { color: #8c3a14; font-size: .85em; min-height: 1.2em; }
+  #prinput { font-size: 1.8em; font-weight: 800; background: rgba(255,245,215,.8); border: 2px solid #6d4322; border-radius: 6px; margin: .2em auto; width: 6em; }
+  #prkeys { display: grid; grid-template-columns: repeat(6, 2.6em); gap: .25em; justify-content: center; margin-bottom: .4em; }
+  #prkeys button { padding: .25em 0; font: inherit; font-weight: 800; }
+  .scorerow { display: flex; justify-content: space-between; padding: .15em .5em; font-weight: 700; }
+  .scorerow.me { background: rgba(255,216,74,.45); border-radius: 4px; }
+  .wbar { display: flex; align-items: center; gap: 3px; font-size: .68em; line-height: 1.25; }
+  .wbar span { width: 4.4em; }
+  .wbar i { width: 8px; height: 6px; background: rgba(60,30,10,.22); border-radius: 1px; }
+  .wbar i.f { background: #b5451f; }
   .shophead { display: flex; justify-content: space-between; align-items: center; gap: .7em; margin: .3em 0 .7em; font-size: .95em; color: #9fc9b0; }
   .shopcoins { color: #ffd84a; font-weight: 800; font-size: 1.15em; }
   .shopslot { margin-bottom: .8em; }
@@ -107,6 +166,22 @@
   .shopitem button { margin-top: auto; min-height: 40px; border-radius: 8px; padding: .3em .6em; font-size: .95em; font-weight: 800; cursor: pointer; border: 1px solid rgba(255,255,255,.25); background: #2f8f4e; color: #fff; }
   .shopitem button:disabled { opacity: .5; cursor: not-allowed; }
   .shopitem button.equipped { background: #1c3a29; border-color: #7be0a0; color: #9fe7bb; }
+  /* Lompat sudah ada di tombol hijau; panah atas hanya dipakai saat berjalan di kampung. */
+  #wrap:not(.basemode) #up { visibility: hidden; }
+  #dpad { pointer-events: auto; touch-action: none; }
+  #dpad .btn { pointer-events: none; }
+  .seedrow { display: flex; align-items: center; gap: .5em; margin-top: .5em; font-size: .9em; color: #4a2208; }
+  .seedrow input { width: 6.5em; min-height: 36px; padding: 0 .4em; font: inherit; font-weight: 800; color: #2f1a0b; background: rgba(255,245,215,.85); border: 2px solid #6d4322; border-radius: 6px; }
+  #serieslink::before { content: '\2190  '; }
+  .titlerow { display: grid; grid-template-columns: 1fr 1fr; gap: .45em; margin-top: .45em; }
+  #credits { position: absolute; inset: 0; z-index: 14; overflow: hidden; background: #150d1c; color: #fff3d6; text-align: center; }
+  #creditroll { position: absolute; left: 0; right: 0; top: 100%; padding: 0 1em; animation: creditroll 32s linear forwards; }
+  #creditroll h3 { margin: 1.4em 0 .3em; font-size: 1.05em; letter-spacing: 1px; color: #ffd84a; }
+  #creditroll p { margin: 0 0 .4em; line-height: 1.45; }
+  #creditroll .credit-by { margin-top: 1.6em; font-size: 1.15em; font-weight: 800; }
+  #creditclose { position: absolute; right: .6em; top: .6em; z-index: 1; }
+  @keyframes creditroll { to { transform: translateY(calc(-100% - 360px * 2)); } }
+  @media (prefers-reduced-motion: reduce) { #creditroll { animation: none; top: 0; bottom: 0; overflow: auto; } }
   @media (max-width: 560px) {
     .btn { width: 54px; height: 54px; font-size: 22px; }
     #jump { width: 64px; height: 64px; }
@@ -120,7 +195,7 @@
   <button id="menubtn" aria-label="Buka menu">&#9776; Menu</button>
 
   <div id="touch">
-    <div class="pad">
+    <div class="pad" id="dpad">
       <div class="btn" id="left">◀</div>
       <div class="btn" id="right">▶</div>
     </div>
@@ -137,19 +212,6 @@
     </div>
   </div>
 
-  <div id="modal" class="hidden">
-    <div class="card">
-      <h2>Gerbang Matematika</h2>
-      <div class="sub">Jawab dengan benar untuk membuka jalan. Salah tidak mengurangi HP.</div>
-      <div class="q" id="qtext">...</div>
-      <div class="choices" id="choices"></div>
-      <div class="feedback" id="feedback"></div>
-      <div class="row">
-        <button class="ghost" id="later">Nanti</button>
-      </div>
-    </div>
-  </div>
-
   <div id="menu" class="hidden">
     <div class="card">
       <div class="menuhead">
@@ -160,19 +222,26 @@
         <button class="primary" id="menuclose">Lanjut</button>
         <button class="ghost" id="restart">Ulangi Misi</button>
         <button class="ghost" id="home">Pulang ke Kampung</button>
-        <button class="ghost" id="shopbtn">Toko &amp; Upgrade</button>
+        <button class="ghost" id="shopbtn">Perlengkapan</button>
+        <button class="ghost" id="scorebtn">Papan Skor</button>
         <button class="ghost" id="sound">Suara</button>
+        <button class="ghost" id="serieslink">Ke Beranda Seri</button>
       </div>
-      <div class="keys">Kampung: panah untuk jalan, Spasi atau E untuk bicara dan berladang. Misi: panah untuk gerak, Spasi untuk lompat, J untuk serang, K untuk ganti senjata. Esc: menu.</div>
+      <button class="ghost" id="keysbtn">? Cara Main</button>
+      <div class="keys hidden" id="keystext">Kampung: panah untuk jalan, Spasi atau E untuk bicara dan berladang. Misi: panah untuk gerak, Spasi untuk lompat, J untuk serang, K untuk ganti senjata. Esc: menu.</div>
     </div>
   </div>
 
   <div id="title" class="hidden">
     <div class="card" style="text-align:center">
       <div class="logo">Math Hero 4</div>
-      <div class="logosub">Bayu dan Kabut Kacau</div>
+      <div class="logosub">Arka dan Kabut Kacau</div>
       <div class="sub" style="margin-bottom:.8em">Rawat ladang, hitung di gerbang, dan rebut kembali Kristal Bilangan.</div>
       <button class="primary" id="start" style="width:100%">Mulai Petualangan</button>
+      <div class="titlerow">
+        <button class="ghost" id="creditbtn">Kredit</button>
+        <button class="ghost" id="titleseries">Beranda Seri</button>
+      </div>
     </div>
   </div>
 
@@ -181,6 +250,9 @@
       <h2>Papan Misi</h2>
       <div class="sub" id="boardinfo"></div>
       <div id="boardbody"></div>
+      <label class="seedrow hidden" id="seedrow">Seed acak (boleh kosong):
+        <input id="seedinput" type="text" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="123456">
+      </label>
       <div class="row"><button class="ghost" id="boardclose">Tutup</button></div>
     </div>
   </div>
@@ -212,16 +284,32 @@
 
   <div id="shop" class="hidden">
     <div class="card shopcard">
-      <h2>Toko &amp; Upgrade</h2>
+      <h2 id="shoptitle">Perlengkapan Arka</h2>
       <div class="shophead">
         <span class="shopcoins" id="shopcoins">Koin 0</span>
-        <span id="shopstatus">Pilih item untuk dibeli, lalu pasang.</span>
+        <span id="shopstatus"></span>
       </div>
       <div id="shopbody"></div>
       <div class="row">
         <button class="ghost" id="shopclose">Tutup</button>
       </div>
     </div>
+  </div>
+
+  <div id="pr" class="hidden">
+    <div class="card prcard">
+      <h2>PR di Dalam Peti</h2>
+      <div id="prtext"></div>
+      <div id="prhint"></div>
+      <div id="prinput">_</div>
+      <div id="prkeys"></div>
+      <div class="row"><button class="ghost" id="prskip">Lewati</button><button class="primary" id="prok">Periksa</button></div>
+    </div>
+  </div>
+
+  <div id="credits" class="hidden">
+    <button class="ghost" id="creditclose">Tutup</button>
+    <div id="creditroll"></div>
   </div>
 
   <div id="win" class="hidden">
@@ -231,7 +319,7 @@
       <div id="wintext" style="color:#cfe8d9;margin-bottom:.6em"></div>
       <div id="wincoins" style="color:#ffd84a;font-weight:800;margin-bottom:.4em"></div>
       <div class="row">
-        <button class="ghost" id="winshop">Toko &amp; Upgrade</button>
+        <button class="ghost" id="winshop">Perlengkapan</button>
         <button class="ghost" id="again">Main Lagi</button>
         <button class="primary" id="next">Pulang ke Kampung</button>
       </div>
@@ -257,8 +345,7 @@
 <script src="js/combat/weapons.js"></script>
 <script src="js/combat/enemies.js"></script>
 <script src="js/boss/schema.js"></script>
-<script src="js/boss/bosses/penjaga.js"></script>
-<script src="js/boss/bosses/raja-bandit.js"></script>
+<script src="js/boss/bosses/roster.js"></script>
 <script src="js/boss/machine.js"></script>
 <script src="js/boss/gen.js"></script>
 <script src="js/gen/chunks.js"></script>
@@ -266,16 +353,25 @@
 <script src="js/gen/levels.js"></script>
 <script src="js/theme.js"></script>
 <script src="../js/firebase-config.js"></script>
+<script src="../shared/js/scores.js"></script>
 <script src="js/base/farm.js"></script>
 <script src="js/base/story.js"></script>
 <script src="js/base/world.js"></script>
 <script src="js/base/sim.js"></script>
+<script src="../shared/js/credits.js"></script>
+<script src="js/tutor.js"></script>
+<script src="js/soal.js"></script>
+<script src="js/mech.js"></script>
+<script src="js/base/talk.js"></script>
 <script src="js/base/scene.js"></script>
 <script src="js/shop.js"></script>
 <script src="js/progress.js"></script>
 <script src="js/cloud.js"></script>
 <script src="js/sim.js"></script>
 <script src="js/scene.js"></script>
+<script src="../shared/vendor/gsap/gsap.min.js"></script>
+<script src="../shared/vendor/gsap/Draggable.min.js"></script>
 <script src="js/main.js"></script>
+<script src="../shared/js/scratchpad.js"></script>
 </body>
 </html>

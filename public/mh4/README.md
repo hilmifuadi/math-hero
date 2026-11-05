@@ -4,8 +4,9 @@ Halaman: `http://localhost:8091/mh4/` (jalankan `npm start` dari root repo).
 
 ## Alur
 
-Layar judul, cerita pembuka, lalu markas top down Kampung Lumbung: berjalan, bicara dengan warga,
-berladang, tidur di rumah, dan berangkat misi lewat Pak Gapura. Misi memakai platformer. Tanaman
+Layar judul, cerita pembuka, lalu markas top down Kampung Lumbung tempat Arka tinggal: berjalan,
+bicara dengan warga, berladang, tidur di rumah, dan berangkat misi lewat Farah di seberang
+sungai. Kampung punya empat rumah warga, alun-alun, ladang di barat, dan kandang di timur. Misi memakai platformer. Tanaman
 yang disiram tumbuh saat pulang dari misi, dan kabut di kampung menipis tiap boss kalah.
 Logika ada di `js/base/`, sumber aset di `assets/mh4/v2/SUMBER.md`.
 
@@ -13,9 +14,10 @@ Logika ada di `js/base/`, sumber aset di `assets/mh4/v2/SUMBER.md`.
 
 - Desktop: panah kiri/kanan atau `A`/`D` untuk bergerak, panah atas/`W`/`Spasi`/`Z` untuk
   lompat, panah bawah/`S`/`X` untuk turun, `J` untuk serang, `K` untuk ganti senjata.
-- HP: tombol ◀ ▶, ▲ untuk lompat, ▼ untuk turun, ⚔ untuk serang, ⇄ untuk ganti senjata,
-  dan tombol lompat ⤒ di kanan bawah. Lompat kedua tersedia di udara.
-- ▲/panah atas = lompat. ▼/panah bawah = turun menembus platform `=` dan jatuh lebih cepat
+- HP: tombol ◀ ▶ (jempol boleh bergeser tanpa diangkat), ▼ untuk turun, ⚔ untuk serang, ⇄ untuk
+  ganti senjata, dan tombol lompat ⤒ di kanan bawah. ▲ hanya tampil di kampung. Lompat kedua tersedia
+  di udara, dan makin lama tombol ditahan makin tinggi lompatannya.
+- Panah atas = lompat. ▼/panah bawah = turun menembus platform `=` dan jatuh lebih cepat
   saat di udara.
 - Tombol `Menu` di kanan atas (atau `Esc`/`P`) menjeda game dan berisi pilihan level,
   `BOSS`/`BOSS 2`, `Toko`, `Suara`, dan `Ulangi Level`. Tombol sentuh hanya tampil di perangkat
@@ -49,6 +51,53 @@ Logika ada di `js/base/`, sumber aset di `assets/mh4/v2/SUMBER.md`.
   hero menjadi 0,75x. Arena 27x15 tile tampil pada zoom 1,5.
 - Tujuan di arena boss terkunci sampai boss kalah.
 
+## Soal, kelas, dan isi level baru
+
+- Nadiya di alun-alun menanyakan kelas Arka, dan Farah baru mengizinkan berangkat setelah itu.
+  Kelas bisa diganti kapan saja. Tiap level punya tiga gerbang soal dari `js/soal.js`: untuk kelas K
+  variasinya kelas K-2, K-1, dan K (kelas 1 sampai 6, minimal kelas 1).
+- Mekanik peta di `js/mech.js`: `s` per, `~` papan runtuh, `-` platform gerak, `|` lift,
+  `( )` pintu ajaib, `> <` pelontar samping, `o` gergaji, `L` kunci mini boss.
+- Mini boss `Q` Orc Raksasa dan `Z` Raja Lendir muncul di tengah sebagian level. Jalan terkunci sampai
+  ia kalah, lalu hero pulih 30% HP.
+- Empat level menara (18, 21, 24, 28) dibuat `buildTower` di `gen/levels.js`: naik per lantai, 34 tile
+  lebar, gerbang soal berupa pintu langit-langit. Total ada 26 misi dalam 7 bab pendek, tiap bab ditutup boss, ditambah boss acak.
+
+## Skor dan PR
+
+Skor level berasal dari soal gerbang (benar +100 sampai +200 menurut kelas soal, salah -30), PR, musuh yang
+kalah, dan bonus waktu 1000 sampai 100. Mengulang misi hanya mengganti skor bila lebih baik, dan jumlah skor
+terbaik semua misi dikirim ke papan `mh4`. Membuka peti memunculkan PR soal cerita yang diketik (+300, -50 tiap
+salah, minimal +100, boleh dilewati). Balok soal hanya bisa dipilih dengan senjata dekat atau tombol angka.
+Pintu ajaib masuk dengan tombol bawah, dua arah, dan menuju ruang rahasia berisi bintang.
+
+## Tutorial, ending, dan kredit
+
+`js/tutor.js` memandu kontrol di misi 1 sampai tiap langkah dilakukan, lalu tidak muncul lagi. Setelah Raja
+Goblin kalah pertama kali tampil `Story.ENDING` dan gulungan kredit (`Story.CREDITS`). Kredit juga bisa dibuka
+dari layar judul, dan layar judul serta menu punya tautan ke beranda seri.
+
+## Mode acak
+
+Terbuka setelah Lendir Kabut kalah, di bab Tantangan Acak pada Papan Misi. `Levels.genLevel(seed, {tier, power})` memilih tema, bentuk (sekitar
+seperempat menara), dan isi dari seed, lalu `Levels.reachable()` memastikan S sampai K dan E bisa ditempuh. Peta yang gagal diganti turunan seed
+yang sama. `BossGen.build` merakit 9 makhluk, 12 mekanik, dan 3 watak; kesulitan menambah jumlah mekanik. Tingkat keduanya mengikuti jumlah boss
+cerita yang sudah kalah. Seed tampil di layar menang dan bisa diketik di Papan Misi, Ulangi Misi memakai seed yang sama, Main Lagi memakai seed baru.
+
+## Bangun kampung dan senjata pamungkas
+
+Papan "Bangun" di barat alun-alun menjual 12 hiasan dan bangunan (`Farm.BUILDS`, 150 sampai 8.000 koin) yang tersimpan di
+`profile.base.built`. `World.kampung(built)` menyusun peta: kampung kini 38 baris, dan tanah selatan dipakai bengkel, rumah ramuan,
+sekolah, dan altar. Ternak tambahan menggandakan hasil kandang. Titu si kucing mengikuti Arka, tertidur bila Arka diam, bisa dielus,
+dan disebut semua warga. Tiga senjata pamungkas (Pedang Angin, Bumerang, Panah Cahaya, 5.000 koin) dibeli di Perlengkapan setelah
+Raja Goblin kalah; damage biasa, keunggulannya pola serang.
+
+## Warga
+Warga kampung: Aki Tyo, Bida (kios), Nadiya (guru), Farah (gerbang), Ayah Hilmi (senjata), dan Mamah Zahra
+(nasihat, dekat kandang). Dialog disusun `js/base/talk.js` dari jam perangkat, lama bermain hari ini, isi
+peti, ladang, ternak, koin, dan hasil misi terakhir. Setelah 60 menit dan saat larut malam warga mengingatkan
+untuk berhenti. Efek senjata, kematian musuh, dan kemenangan boss ada di bagian Efek pada `js/scene.js`.
+
 ## Isi level
 
 - `S` mulai, `C` checkpoint, `*` bintang, `^` duri, `K` peti reward, `E` portal tujuan,
@@ -81,13 +130,11 @@ Ada 14 level seed tetap, 8 tema, dan 2 arena boss:
 | 15 | Penjaga Mesin (BOSS) | Industrial zone |
 | 16 | Raja Bandit (BOSS 2) | Benteng Batu (castle) |
 
-Tema **Kota Malam** memakai latar city-night baru dan salinan tile/dekor Industrial yang
-sudah diberi tint gelap saat aset disiapkan, jadi tidak ada tint runtime. Tema **Gua Kristal**
-memakai tile batu 16x16 dari Dungeon Tileset, latar gua berpilar, dan dekor rak/bokor. Tema
-**Sarang Purba** memakai tile organik 32x32, latar sarang gelap bersulur, dan dekor batu/pakis.
-Tema **Kota Siang** memakai tile urban 16x16 (atap, bata, aspal) dan latar city-day. Tema
-**Benteng Batu** memakai tile medieval 48x48 (bata merah di atas dinding navy), latar aula
-berpilar bercahaya obor, serta dekor barel, peti, dan obor.
+Semua tema memakai satu gaya dari `scripts/prepare_world_mh4.js` (hasilnya di
+`assets/mh4/v2/world/`). Tanah memakai tekstur batu Pixel Crawler yang diwarnai per tema, atau
+balok buatan kode untuk Kota Siang dan Benteng Batu, ditutup rumput, lumut, papan, atap, atau batu.
+Latar berlapis digambar kode pada 320x180 dengan warna datar sehingga sama padat dengan hero di
+zoom 2. Dekor dipotong dari paket yang sama dengan markas, dan semua gambar bergaris tepi gelap.
 
 Pustaka ruang berisi 64 ruang tulis tangan 20x10: jalur datar, jurang, duri, bukit,
 platform, langit-langit, pilar, tangga naik, turunan bercabang, atap, lorong gang, ruang
@@ -104,8 +151,9 @@ di tanah datar yang jauh dari gerbang/tujuan.
 - Bentuk data: `uid`, `nama`, `koin`, `owned`, `equipped`, `best`, `totalStars`, `updatedAt`.
   Semua data cloud dibersihkan lewat `progress.normalize()` sebelum dipakai.
 - Level terbuka berurutan; level 1 selalu terbuka. Bintang memakai nilai terbaik per level.
-- Koin didapat dari bintang (5/butir), peti reward (+30), menamatkan level pertama kali
-  (+20), dan boss (+120 pertama / +60 ulangan). Item `Magnet Koin` menambah 25%.
+- Level memberi sedikit koin: bintang di atas rekor (1/butir), peti pertama kali (+12), tamat
+  pertama kali (+10), dan boss (+60 pertama / +10 ulangan). Item `Magnet Koin` menambah 25%.
+  Pemasukan utama datang dari menjual hasil ladang dan ternak di peti.
 - Toko punya empat slot: **Pedang**, **Blaster**, **Armor**, dan **Jimat**. Membeli item
   langsung memasangnya; satu item aktif per slot. Efeknya masuk ke `Sim.create(def, {loadout})`
   sebagai pengali damage/cooldown/kecepatan dan tambahan HP maksimal. Saat item diganti di

@@ -17,7 +17,7 @@
     "test:snapshot": "node tests/levelgen_snapshot.test.js",
     "test:bank": "node tests/questionbank.test.js",
     "test:mh2": "node tests/mh2.test.js",
-    "test:mh4": "node tests/mh4_levelgen.test.js && node tests/mh4_sim.test.js && node tests/mh4_combat.test.js && node tests/mh4_enemies.test.js && node tests/mh4_boss.test.js && node tests/mh4_progress.test.js && node tests/mh4_base.test.js && node tests/mh4_smoke.test.js",
+    "test:mh4": "node tests/mh4_levelgen.test.js && node tests/mh4_sim.test.js && node tests/mh4_combat.test.js && node tests/mh4_enemies.test.js && node tests/mh4_boss.test.js && node tests/mh4_progress.test.js && node tests/mh4_base.test.js && node tests/mh4_smoke.test.js && node tests/mh4_soal.test.js && node tests/mh4_talk.test.js",
     "test:scratch": "node tests/scratchpad_ui.js",
     "test:mh3": "node tests/mh3_homework.test.js && node tests/mh3_defense.test.js && node tests/mh3_units.test.js && node tests/mh3_plat.test.js && node tests/mh3_mekanik.test.js && node tests/mh3_endless.test.js && node tests/mh3_progress.test.js && node tests/mh3_adapt.test.js"
   },

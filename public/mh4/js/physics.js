@@ -18,8 +18,8 @@
     MAXFALL: 440,
     COYOTE: 0.1,
     BUFFER: 0.12,
-    PW: 14,
-    PH: 26,
+    PW: 12,
+    PH: 20,
   };
 
   // Isi tile: 0 kosong, 1 padat, 2 platform tembus dari bawah.

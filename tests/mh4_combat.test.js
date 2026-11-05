@@ -121,6 +121,7 @@ ok('cooldown mencegah spam serangan', () => {
   frames(g, 30);
   tap(g, 'attack');
   assert.ok(g.enemies[0].hp < hp1, 'setelah cooldown serangan jalan lagi');
+  assert.ok(g.cooldownMax > 0 && g.cooldown <= g.cooldownMax, 'indikator punya patokan penuh');
 });
 
 const withGear = (map, gear) => Sim.create({ map }, { loadout: gear });
@@ -131,7 +132,7 @@ ok('tiap senjata punya identitas dan hanya damage yang ikut level', () => {
   const rangedMax = Math.max(...Weapons.RANGED.map((id) => Weapons.get(id).damage));
   assert.ok(rangedMax < meleeMin, 'jarak jauh selalu lebih lemah per serangan');
   const sig = (id) => { const w = Weapons.get(id); return [w.range, w.height, w.cooldown, w.knockback, w.gravity, w.bounce, w.blast].join(); };
-  assert.strictEqual(new Set([...Weapons.MELEE, ...Weapons.RANGED].map(sig)).size, 6, 'semua berbeda');
+  assert.strictEqual(new Set([...Weapons.MELEE, ...Weapons.RANGED].map(sig)).size, Weapons.MELEE.length + Weapons.RANGED.length, 'semua berbeda');
   assert.ok(Weapons.damageFor(Weapons.get('palu'), 3) > Weapons.get('palu').damage);
 });
 
@@ -177,6 +178,13 @@ ok('pemantul berbalik di dinding sesuai jumlah pantulan', () => {
   assert.ok(flipped && s.bounce < 2, 'peluru memantul');
 });
 
+ok('tebasan mengenai musuh yang berdiri sedikit lebih rendah', () => {
+  const w = Weapons.get('pedang');
+  const p = { x: 100, y: 50, w: 12, h: 20 };
+  const box = Weapons.meleeBox(p, 1, w);
+  assert.ok(box.y + box.h >= p.y + p.h + 8, 'kotak sampai di bawah kaki hero');
+});
+
 ok('Pendingin hanya mempercepat senjata jauh', () => {
   const lo = { rangedCooldownMul: 0.5 };
   const g = withGear(NEAR, lo);
@@ -191,7 +199,7 @@ ok('Pendingin hanya mempercepat senjata jauh', () => {
 ok('kekuatan musuh dan senjata naik halus per level dan tetap seimbang', () => {
   const L = require('../public/mh4/js/gen/levels.js');
   const Enemies = require('../public/mh4/js/combat/enemies.js');
-  const powers = L.LEVELS.map((l) => l.power);
+  const powers = L.LEVELS.map((l) => l.power).sort((x, y) => x - y);
   for (let i = 1; i < powers.length; i++) assert.ok(powers[i] > powers[i - 1], 'naik tiap level');
   assert.ok(powers[powers.length - 1] <= 3, 'tidak melewati arena boss');
   const pedang = Weapons.get('pedang');
@@ -211,13 +219,61 @@ ok('HP dan serangan boss ikut sebagian kekuatan hero', () => {
   assert.strictEqual(strong.boss.maxHp, Math.round(L.BOSS.bossDef.maxHp * 1.5));
   assert.strictEqual(strong.boss.hp, strong.boss.maxHp);
   strong.invuln = 0;
-  Sim.hurt(strong, 'boss', 10);
+  Sim.hurt(strong, 'boss', 10); while (strong.dying > 0) Sim.update(strong, 1 / 60, {});
   assert.strictEqual(strong.hp, 60 - 15, 'hero 2x HP: serangan 1,5x');
   strong.boss.hp = 1;
   strong.hp = 1; strong.invuln = 0;
   strong.boss.phaseIndex = 0;
-  Sim.hurt(strong, 'boss', 10);
+  Sim.hurt(strong, 'boss', 10); while (strong.dying > 0) Sim.update(strong, 1 / 60, {});
   assert.strictEqual(strong.boss.hp, strong.boss.maxHp, 'reset memakai HP maksimal boss ini');
+});
+
+ok('senjata pamungkas: tebasan ganda, panah tembus, bumerang pulang', () => {
+  const BOTH = [
+    '....................',
+    '....................',
+    '....................',
+    '....................',
+    'e......S......e...E.',
+    '####################',
+  ];
+  // Pedang Angin mengenai musuh di depan dan di belakang sekaligus.
+  const g = withGear(BOTH, { melee: 'pedang-angin' });
+  g.weapons = ['pedang-angin', 'blaster']; g.weapon = 'pedang-angin';
+  frames(g, 20);
+  const s = g.p.x;
+  for (const e of g.enemies) { e.x = e.x < s ? s - 18 : s + g.p.w + 6; e.awake = false; }
+  const hp = g.enemies.map((e) => e.hp);
+  tap(g, 'attack');
+  g.enemies.forEach((e, i) => assert.ok(e.hp < hp[i], 'musuh ' + i + ' kena'));
+  // Panah Cahaya menembus dua musuh dalam satu tembakan.
+  const LINE = [
+    '....................',
+    '....................',
+    '....................',
+    '....................',
+    'S....e..e.........E.',
+    '####################',
+  ];
+  const p = Sim.create({ map: LINE });
+  p.weapons = ['pedang', 'panah-cahaya']; p.weapon = 'panah-cahaya';
+  frames(p, 20);
+  for (const e of p.enemies) e.awake = false;
+  const hp2 = p.enemies.map((e) => e.hp);
+  tap(p, 'attack');
+  frames(p, 40);
+  p.enemies.forEach((e, i) => assert.ok(e.hp < hp2[i], 'panah tembus ' + i));
+  // Bumerang berbalik dan hilang di tangan Arka.
+  const b = Sim.create({ map: LINE.map((r) => r.replace(/e/g, '.')) });
+  b.weapons = ['pedang', 'bumerang']; b.weapon = 'bumerang';
+  frames(b, 20);
+  tap(b, 'attack');
+  const shot = b.shots[0];
+  assert.ok(shot && shot.vx > 0, 'bumerang berangkat ke depan');
+  let back = false;
+  for (let i = 0; i < 240 && b.shots.length; i++) { tick(b); if (b.shots[0] && b.shots[0].vx < 0) back = true; }
+  assert.ok(back, 'bumerang berbalik');
+  assert.strictEqual(b.shots.length, 0, 'bumerang kembali ke tangan');
 });
 
 console.log(`\n${n} tes combat MH4 lulus.`);

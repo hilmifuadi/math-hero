@@ -1,5 +1,5 @@
 // Math Hero 4: katalog toko dan equipment. Data murni: tidak tahu DOM maupun Firebase.
-// Empat slot: pedang, blaster, armor, jimat. Satu item per slot; efeknya dijumlahkan
+// Empat slot: asahan, laras, armor, dan benda berguna (kunci data: jimat). Satu item per slot; efeknya dijumlahkan
 // oleh progress.loadout() lalu dipakai Sim.create().
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
@@ -21,7 +21,7 @@
     { id: 'jubah-bintang', slot: 'armor', nama: 'Jubah Bintang', price: 320, desc: 'HP +12 dan gerak 5% lebih cepat.', effects: { maxHp: 12, speedMul: 1.05 } },
     { id: 'magnet-koin', slot: 'jimat', nama: 'Magnet Koin', price: 110, desc: 'Koin dari level +25%.', effects: { coinMul: 1.25 } },
     { id: 'sepatu-angin', slot: 'jimat', nama: 'Sepatu Angin', price: 150, desc: 'Gerak 12% lebih cepat.', effects: { speedMul: 1.12 } },
-    { id: 'jimat-hati', slot: 'jimat', nama: 'Jimat Hati', price: 240, desc: 'HP +8 dan cooldown 5% lebih pendek.', effects: { maxHp: 8, cooldownMul: 0.95 } },
+    { id: 'jimat-hati', slot: 'jimat', nama: 'Kalung Hati', price: 240, desc: 'HP +8 dan serangan 5% lebih cepat.', effects: { maxHp: 8, cooldownMul: 0.95 } },
   ];
 
   const BY_ID = {};

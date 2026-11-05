@@ -85,7 +85,7 @@ Urutan pekerjaan:
   `public/mh4/js/boss/gen.js` (level 17 `ACAK`). Rincian di WL-014.
 - **Paket 3 review (selesai):** enam senjata dengan identitas nyata dari peti, upgrade point,
   dan `power` per level. Rincian di WL-015.
-- **Paket 4 review (selesai):** markas top down `public/mh4/js/base/`, cerita per bab, hero Bayu,
+- **Paket 4 review (selesai):** markas top down `public/mh4/js/base/`, cerita per bab, hero Arka,
   aset `public/assets/mh4/v2/`. Game kini mulai dari judul dan markas. Rincian di WL-016.
 - **Fase 4:** perluasan tema, chunk, senjata, boss, progresi.
 

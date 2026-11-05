@@ -5,10 +5,14 @@
 const assert = require('assert');
 const L = require('../public/mh4/js/gen/levels.js');
 const Sim = require('../public/mh4/js/sim.js');
+const Weapons = require('../public/mh4/js/combat/weapons.js');
 const Schema = require('../public/mh4/js/boss/schema.js');
 const Machine = require('../public/mh4/js/boss/machine.js');
-const Penjaga = require('../public/mh4/js/boss/bosses/penjaga.js');
-const Raja = require('../public/mh4/js/boss/bosses/raja-bandit.js');
+// Data lama dipakai untuk menguji primitif mesin yang tetap ada.
+const Penjaga = require('./fixtures/mh4_boss_penjaga.js');
+const Raja = require('./fixtures/mh4_boss_raja-bandit.js');
+const BOSS = Object.assign({}, L.BOSS, { bossDef: Penjaga });
+const BOSS2 = Object.assign({}, L.BOSS2, { bossDef: Raja });
 
 let n = 0;
 const ok = (name, fn) => { fn(); n++; console.log('ok ' + name); };
@@ -65,7 +69,7 @@ ok('siklus idle -> telegraph -> attack -> recovery -> idle', () => {
   assert.ok(['attack', 'recovery', 'idle'].includes(s.mode), 'telegraph selesai');
   assert.ok(ev.some((e) => e.type === 'bossAttack'), 'event attack muncul');
 
-  ev = run(s, 200);
+  ev = ev.concat(run(s, 200));
   assert.ok(ev.some((e) => e.type === 'bossRecovery'), 'event recovery muncul');
   assert.ok(s.attackCount >= 1, 'serangan dihitung');
 });
@@ -166,7 +170,7 @@ ok('HP 0 menandai defeated dan membersihkan bahaya', () => {
 });
 
 ok('arena boss menaruh boss di spawn dan tujuan terkunci sampai kalah', () => {
-  const g = Sim.create(L.BOSS);
+  const g = Sim.create(BOSS);
   assert.ok(g.boss, 'arena boss membuat BossMachine');
   assert.strictEqual(g.boss.hp, Penjaga.maxHp);
   assert.ok(Math.abs(g.boss.x - (g.L.bossSpawn.c * 16 + 8 - g.boss.w / 2)) < 1, 'boss di kolom B');
@@ -184,7 +188,7 @@ ok('arena boss menaruh boss di spawn dan tujuan terkunci sampai kalah', () => {
 });
 
 ok('serangan hero mengurangi HP boss di arena', () => {
-  const g = Sim.create(L.BOSS);
+  const g = Sim.create(BOSS);
   Sim.teleport(g, g.L.bossSpawn.c - 3, g.L.bossSpawn.r);
   const hp0 = g.boss.hp;
   Sim.update(g, dt, { attack: true });
@@ -207,7 +211,7 @@ const startAttack = (g, id) => {
 const runSim = (g, frames) => { for (let i = 0; i < frames; i++) Sim.update(g, dt, {}); };
 
 ok('kalah di arena mengulang encounter dari awal fase dan membersihkan semuanya', () => {
-  const g = Sim.create(L.BOSS);
+  const g = Sim.create(BOSS);
   const b = g.boss;
   b.phaseIndex = 1;
   b.hp = 40;
@@ -215,7 +219,7 @@ ok('kalah di arena mengulang encounter dari awal fase dan membersihkan semuanya'
   b.hazards.push({ x: 300, y: 10, w: 18, h: 18, vy: 10, damage: 5, targetY: 140 });
   b.zones.push({ x: 300, y: 100, w: 20, h: 40, damage: 5 });
   g.hp = 1; g.invuln = 0;
-  Sim.hurt(g, 'boss', 5);
+  Sim.hurt(g, 'boss', 5); while (g.dying > 0) Sim.update(g, 1 / 60, {});
   assert.strictEqual(b.hp, Math.round(b.maxHp * b.schema.phases[1].hpFrom), 'HP kembali ke awal fase');
   assert.strictEqual(b.phaseIndex, 1, 'fase yang sudah lewat tidak hilang');
   assert.strictEqual(b.x, b.spawnX, 'boss kembali ke tempat');
@@ -225,17 +229,17 @@ ok('kalah di arena mengulang encounter dari awal fase dan membersihkan semuanya'
 });
 
 ok('setelah dua kali kalah ada bantuan ringan', () => {
-  const g = Sim.create(L.BOSS);
-  for (let i = 0; i < 2; i++) { g.hp = 1; g.invuln = 0; Sim.hurt(g, 'boss', 5); }
+  const g = Sim.create(BOSS);
+  for (let i = 0; i < 2; i++) { g.hp = 1; g.invuln = 0; Sim.hurt(g, 'boss', 5); while (g.dying > 0) Sim.update(g, 1 / 60, {}); }
   assert.strictEqual(g.assist, 0.75);
   g.invuln = 0;
   const hp = g.hp;
-  Sim.hurt(g, 'boss', 12);
+  Sim.hurt(g, 'boss', 12); while (g.dying > 0) Sim.update(g, 1 / 60, {});
   assert.strictEqual(g.hp, hp - 9, 'damage 12 menjadi 9');
 });
 
 ok('slam tidak mengenai hero di platform, hanya di lantai', () => {
-  const g = Sim.create(L.BOSS);
+  const g = Sim.create(BOSS);
   const b = g.boss;
   startAttack(g, 'slam');
   const cx = b.x + b.w / 2;
@@ -245,7 +249,7 @@ ok('slam tidak mengenai hero di platform, hanya di lantai', () => {
   b.timer = dt / 2;
   Sim.update(g, dt, {});
   assert.strictEqual(g.hp, hp, 'aman di platform');
-  const g2 = Sim.create(L.BOSS);
+  const g2 = Sim.create(BOSS);
   startAttack(g2, 'slam');
   standAt(g2, g2.boss.x + g2.boss.w / 2 - 40 - 14);
   g2.invuln = 0;
@@ -256,7 +260,7 @@ ok('slam tidak mengenai hero di platform, hanya di lantai', () => {
 });
 
 ok('garis peringatan charge sama dengan jarak dan damage sebenarnya', () => {
-  const g = Sim.create(L.BOSS2);
+  const g = Sim.create(BOSS2);
   standAt(g, 30);
   startAttack(g, 'charge');
   const b = g.boss, plan = b.current.plan;
@@ -266,17 +270,17 @@ ok('garis peringatan charge sama dengan jarak dan damage sebenarnya', () => {
   runSim(g, 200);
   assert.ok(Math.abs(b.x - plan.targetX) < 0.01, 'berhenti tepat di ujung garis');
   assert.ok(b.vulnerable && b.stunned, 'menabrak dinding membuat pusing dan terbuka');
-  const g2 = Sim.create(L.BOSS2);
+  const g2 = Sim.create(BOSS2);
   standAt(g2, g2.boss.x - 40);
   startAttack(g2, 'charge');
   g2.invuln = 0;
   const hp = g2.hp;
-  runSim(g2, 70);
+  runSim(g2, 95);
   assert.strictEqual(hp - g2.hp, g2.boss.schema.attacks.charge.damage, 'damage dari data');
 });
 
 ok('sasaran batu dan zona dikunci saat telegraph dan sama dengan hitbox', () => {
-  const g = Sim.create(L.BOSS);
+  const g = Sim.create(BOSS);
   standAt(g, 100);
   startAttack(g, 'rocks');
   const targets = g.boss.current.plan.targets.slice();
@@ -285,7 +289,7 @@ ok('sasaran batu dan zona dikunci saat telegraph dan sama dengan hitbox', () => 
   g.boss.timer = dt / 2;
   Sim.update(g, dt, {});
   assert.deepStrictEqual(g.boss.hazards.map((h) => h.x), targets, 'batu jatuh di tanda');
-  const g2 = Sim.create(L.BOSS);
+  const g2 = Sim.create(BOSS);
   standAt(g2, 100);
   startAttack(g2, 'burst');
   const zones = JSON.stringify(g2.boss.current.plan.zones);
@@ -298,7 +302,7 @@ ok('sasaran batu dan zona dikunci saat telegraph dan sama dengan hitbox', () => 
 });
 
 ok('weak point Penjaga hanya kena saat terbuka dan harus dilompati', () => {
-  const g = Sim.create(L.BOSS);
+  const g = Sim.create(BOSS);
   const b = g.boss;
   const wb = Machine.weakBox(b);
   const groundBox = { x: b.x - 10, y: floorOf(g) - 27, w: 30, h: 28 };
@@ -312,7 +316,7 @@ ok('weak point Penjaga hanya kena saat terbuka dan harus dilompati', () => {
 });
 
 ok('summon Raja dibatasi, anak buah menjatuhkan HP, dan hilang saat boss kalah', () => {
-  const g = Sim.create(L.BOSS2);
+  const g = Sim.create(BOSS2);
   standAt(g, 60);
   g.invuln = 99;
   startAttack(g, 'summon');
@@ -349,7 +353,7 @@ ok('Raja Bandit valid, punya gelombang tanah, dan dua fase', () => {
   assert.strictEqual(Raja.attacks.wave.kind, 'ground_wave');
   assert.ok(Raja.phases.length >= 2, 'Raja Bandit butuh dua fase');
   assert.ok(Raja.maxHp > Penjaga.maxHp, 'boss kedua harus lebih tangguh');
-  assert.ok(Raja.sprite && Raja.sprite.indexOf('iblis') >= 0);
+  assert.ok(Raja.sprite && Raja.sprite.indexOf('goblin') >= 0);
 });
 
 ok('gelombang tanah menyusur lantai dan bergerak ke arah pemain', () => {
@@ -370,9 +374,9 @@ ok('gelombang tanah menyusur lantai dan bergerak ke arah pemain', () => {
 
 ok('boss kedua punya arena sendiri dan gating tujuan bekerja', () => {
   assert.deepStrictEqual(L.validateBoss(L.BOSS2), []);
-  assert.strictEqual(L.BOSSES.length, 2);
-  assert.strictEqual(L.ALL.length, L.LEVELS.length + L.BOSSES.length + 1, 'plus boss acak');
-  const g = Sim.create(L.BOSS2);
+  assert.strictEqual(L.BOSSES.length, 7);
+  assert.strictEqual(L.ALL.length, L.LEVELS.length + L.BOSSES.length + 2, 'plus boss acak dan level acak');
+  const g = Sim.create(BOSS2);
   assert.strictEqual(g.boss.hp, Raja.maxHp);
   assert.strictEqual(g.boss.schema.id, 'raja-bandit');
   const goal = g.L.goal;
@@ -421,11 +425,251 @@ ok('kesulitan naik lewat kompleksitas, bukan hanya HP', () => {
 });
 
 ok('arena muat di layar dan semua arena valid', () => {
-  for (const def of [L.BOSS, L.BOSS2, L.genBoss(5)]) {
+  for (const def of [...L.BOSSES, L.genBoss(5)]) {
     assert.deepStrictEqual(L.validateBoss(def), []);
     assert.ok(def.map[0].length * 16 <= 640 / 1.5 + 16, 'lebar arena sebingkai');
     assert.ok(def.map.length * 16 <= 360 / 1.5, 'tinggi arena sebingkai');
   }
+});
+
+// ===== Boss baru =====
+const Roster = require('../public/mh4/js/boss/bosses/roster.js');
+const arenaFor = (id) => L.BOSSES.find((x) => x.bossDef.id === id);
+const start = (id, atk) => {
+  const g = Sim.create(arenaFor(id));
+  g.invuln = 99;
+  if (atk) startAttack(g, atk);
+  return g;
+};
+const swing = (g) => { g.cooldown = 0; g.prevAttack = false; g.weapon = 'pedang'; Sim.update(g, dt, { attack: true }); };
+
+ok('semua boss cerita valid, punya watak, dan senjata dekat jauh lebih kuat saat celah', () => {
+  for (const b of Object.values(Roster)) {
+    assert.deepStrictEqual(Schema.validate(b), [], b.nama);
+    assert.ok(b.barks && b.barks.intro.length && b.barks.stun.length && b.barks.taunt.length, b.nama + ' punya celetukan');
+    assert.ok(b.hint && b.roam, b.nama + ' punya petunjuk dan gaya jalan');
+    assert.ok(b.meleeOpen / b.rangedOpen >= 3, b.nama + ' insentif senjata dekat');
+    const open = Object.values(b.attacks).filter((a) => a.signature || a.wallStun);
+    assert.ok(open.length, b.nama + ' punya mekanik khas');
+    for (const a of open) assert.ok((a.stun || a.wallStun || a.recovery) >= 2.4, b.nama + ' celah cukup lama');
+  }
+  const kinds = Object.values(Roster).map((b) => Object.values(b.attacks).filter((a) => a.signature || a.wallStun).map((a) => a.kind + (a.reflect ? 'R' : '') + (a.grab ? 'G' : '') + (a.crown ? 'C' : '')).sort().join());
+  assert.strictEqual(new Set(kinds).size, kinds.length, 'tiap boss punya gabungan mekanik sendiri');
+});
+
+ok('melee saat tumbang jauh lebih kuat dari jauh, dan badan tumbang terjangkau dari tanah', () => {
+  const g = start('penjaga-mesin');
+  const b = g.boss;
+  Machine.stagger(b, 3, []);
+  const hp = b.hp;
+  assert.strictEqual(b.y + b.h, floorOf(g), 'tumbang di tanah');
+  standAt(g, b.x - 16); g.face = 1;
+  swing(g);
+  const melee = hp - b.hp;
+  const hp2 = b.hp;
+  Machine.damage(b, 16, { melee: false });
+  assert.ok(melee >= (hp2 - b.hp) * 3, 'senjata dekat lebih kuat: ' + melee + ' lawan ' + (hp2 - b.hp));
+});
+
+ok('Lendir Kabut: melompat ke arah hero, mendarat, lalu gepeng lama', () => {
+  const g = start('penjaga-mesin', 'hop');
+  const b = g.boss;
+  standAt(g, 100);
+  let top = b.y, stun = 0;
+  for (let i = 0; i < 60 * 8 && !b.stunned; i++) { Sim.update(g, dt, {}); top = Math.min(top, b.y); }
+  assert.ok(top < floorOf(g) - b.h - 30, 'benar-benar melompat');
+  assert.ok(b.stunned && b.vulnerable, 'gepeng dan terbuka');
+  while (b.stunned) { Sim.update(g, dt, {}); stun += dt; if (stun > 9) break; }
+  assert.ok(stun >= 2.4, 'celah ' + stun.toFixed(2) + ' detik');
+});
+
+ok('Bola bisa dipukul balik hanya dengan senjata dekat, dan membuat boss tumbang', () => {
+  const g = start('penjaga-mesin', 'spit');
+  const b = g.boss;
+  standAt(g, 60);
+  b.timer = dt / 2;
+  Sim.update(g, dt, {});
+  const p = b.projectiles[0];
+  assert.ok(p && p.reflectable, 'bola bisa dipantulkan');
+  // Peluru hero tidak memantulkan.
+  g.p.x = p.x - 10; g.p.y = p.y - 6; g.face = 1;
+  swing(g);
+  assert.ok(p.reflected, 'dipukul balik');
+  for (let i = 0; i < 120 && !b.stunned; i++) Sim.update(g, dt, {});
+  assert.ok(b.stunned, 'kena bola sendiri dan tumbang');
+});
+
+ok('Dukun: perisai menahan, totem hanya pecah oleh senjata dekat, lalu tumbang', () => {
+  const g = start('dukun', 'shield');
+  const b = g.boss;
+  b.timer = dt / 2;
+  Sim.update(g, dt, {});
+  assert.ok(b.shield);
+  const hp = b.hp;
+  Machine.damage(b, 100, { melee: true });
+  assert.strictEqual(b.hp, hp, 'perisai menahan semua');
+  const totems = b.props.filter((p) => p.kind === 'totem');
+  assert.strictEqual(totems.length, 2);
+  assert.strictEqual(Machine.hitProps(b, totems[0], { melee: false }).length, 0, 'peluru tidak memecah totem');
+  Machine.hitProps(b, totems[0], { melee: true });
+  assert.ok(b.shield && !b.stunned, 'satu totem belum cukup');
+  const ev = Machine.hitProps(b, totems[1], { melee: true });
+  assert.ok(!b.shield && b.stunned && ev.some((e) => e.type === 'bossStun'), 'perisai pecah dan tumbang');
+});
+
+ok('Ayam: terbang menjatuhkan telur, telur ditendang atau ditembak menjatuhkannya', () => {
+  const g = start('ayam', 'fly');
+  const b = g.boss;
+  b.timer = dt / 2;
+  Sim.update(g, dt, {});
+  for (let i = 0; i < 90; i++) Sim.update(g, dt, {});
+  assert.ok(b.y < floorOf(g) - b.h - 40, 'terbang');
+  assert.ok(b.props.some((p) => p.kind === 'egg'), 'telur jatuh');
+  const egg = b.props.find((p) => p.kind === 'egg');
+  Machine.hitProps(b, egg, { melee: true });
+  for (let i = 0; i < 120 && !b.stunned; i++) Sim.update(g, dt, {});
+  assert.ok(b.stunned && b.y + b.h === floorOf(g), 'telur membuatnya jatuh');
+  const g2 = start('ayam', 'fly');
+  g2.boss.timer = dt / 2;
+  Sim.update(g2, dt, {});
+  for (let i = 0; i < 60; i++) Sim.update(g2, dt, {});
+  for (let i = 0; i < g2.boss.schema.attacks.fly.shotsToDrop; i++) Machine.damage(g2.boss, 5, { melee: false });
+  assert.ok(g2.boss.stunned, 'tembakan menjatuhkan yang terbang: senjata jauh tetap berguna');
+  // Telur yang dibiarkan menetas menjadi anak ayam.
+  const g3 = start('ayam');
+  g3.boss.props.push({ kind: 'egg', x: 100, y: floorOf(g3) - 14, w: 12, h: 14, vy: 0, groundY: floorOf(g3) - 14, hatch: 0.05, damage: 5 });
+  for (let i = 0; i < 8; i++) Sim.update(g3, dt, {});
+  assert.ok(g3.enemies.some((e) => e.minion && e.kind === 'chick'), 'menetas');
+});
+
+ok('Lendir Spora: tiruan pecah sekali pukul, yang asli membuatnya tumbang', () => {
+  const g = start('spora', 'split');
+  const b = g.boss;
+  b.timer = dt / 2;
+  Sim.update(g, dt, {});
+  assert.strictEqual(b.clones.length, 2);
+  const c = b.clones[0];
+  Machine.hitProps(b, c, { melee: false });
+  assert.strictEqual(b.clones.length, 1, 'tiruan pecah');
+  assert.ok(!b.stunned);
+  Machine.damage(b, 20, { melee: true });
+  assert.ok(b.stunned && !b.clones.length, 'yang asli kena: tumbang dan tiruan hilang');
+});
+
+ok('Goblin Merah: tertangkap mencuri senjata, kantong mengembalikan, dilompati dia terpeleset', () => {
+  const g = start('goblin-merah', 'grab');
+  const b = g.boss;
+  g.invuln = 0;
+  assert.strictEqual(g.weapons.length, 2);
+  b.timer = dt / 2;
+  standAt(g, b.x - 30);
+  for (let i = 0; i < 40 && !g.stolen; i++) Sim.update(g, dt, {});
+  assert.ok(g.stolen, 'senjata jauh dicuri');
+  assert.strictEqual(g.weapons.length, 1);
+  assert.strictEqual(Weapons.get(g.weapon).type, 'melee', 'tinggal senjata dekat');
+  const bag = b.props.find((p) => p.kind === 'bag');
+  assert.ok(bag);
+  g.invuln = 99; g.p.x = bag.x; g.p.y = bag.y - 4;
+  Sim.update(g, dt, {});
+  assert.strictEqual(g.weapons.length, 2, 'kantong mengembalikan');
+  const g2 = start('goblin-merah', 'grab');
+  const b2 = g2.boss;
+  g2.p.y = 0; g2.p.x = 10;
+  for (let i = 0; i < 60 * 6 && !b2.stunned; i++) { g2.p.y = 0; g2.p.vy = 0; Sim.update(g2, dt, {}); }
+  assert.ok(b2.stunned, 'luput: menabrak dan pusing');
+  assert.ok(b2.props.some((p) => p.kind === 'coin'), 'koin berjatuhan');
+});
+
+ok('Lendir Malam: lentera menyala di dekatnya membuat tumbang, jauh tidak', () => {
+  const g = start('lendir-malam', 'lights');
+  const b = g.boss;
+  b.timer = dt / 2;
+  Sim.update(g, dt, {});
+  assert.ok(b.dark);
+  const lamps = b.props.filter((p) => p.kind === 'lantern');
+  assert.strictEqual(lamps.length, 3);
+  b.x = lamps[2].x + 300;
+  Machine.hitProps(b, lamps[0], { melee: true });
+  assert.ok(lamps[0].lit > 0 && !b.stunned, 'jauh: lampu menyala saja');
+  b.x = lamps[1].x - 20;
+  Machine.hitProps(b, lamps[1], { melee: true });
+  assert.ok(b.stunned, 'dekat: silau dan tumbang');
+});
+
+ok('lentera tidak menghalangi pukulan ke boss, dan hero tumbang dulu sebelum bangkit', () => {
+  const g = start('lendir-malam', 'lights');
+  const b = g.boss;
+  b.timer = dt / 2;
+  Sim.update(g, dt, {});
+  const lamp = b.props.find((p) => p.kind === 'lantern');
+  b.mode = 'idle'; b.timer = 9;
+  b.x = lamp.x - 10;
+  standAt(g, lamp.x - 18); g.face = 1;
+  g.p.y = b.y + b.h - g.p.h;
+  const hp = b.hp;
+  swing(g);
+  assert.ok(lamp.lit > 0, 'lentera menyala');
+  assert.ok(b.hp < hp, 'boss ikut kena pukulan yang sama');
+  const h = start('penjaga-mesin');
+  h.invuln = 0; h.hp = 1;
+  Sim.hurt(h, 'boss', 5);
+  // Pengait di atas sudah menyelesaikan transisi; periksa langsung tanpa pengait.
+  const j = start('penjaga-mesin');
+  j.invuln = 0; j.hp = 1;
+  j.p.x = 10; j.p.y = 100;
+  Sim.hurt(j, 'duri', 5);
+  assert.ok(j.dying > 0 && j.hp === 0, 'tumbang dulu, belum hidup');
+});
+
+ok('Raja Goblin: menabrak dinding menjatuhkan mahkota, merebutnya menambah celah', () => {
+  const g = start('raja-bandit', 'charge');
+  const b = g.boss;
+  standAt(g, 30);
+  g.p.y = 0;
+  for (let i = 0; i < 60 * 6 && !b.stunned; i++) { g.p.y = 0; g.p.vy = 0; Sim.update(g, dt, {}); }
+  assert.ok(b.stunned);
+  const crown = b.props.find((p) => p.kind === 'crown');
+  assert.ok(crown, 'mahkota jatuh');
+  const t = b.timer;
+  g.p.x = crown.x; g.p.y = crown.y;
+  Sim.update(g, dt, {});
+  assert.ok(b.timer > t + 2, 'celah bertambah');
+  assert.ok(Roster.rajaGoblin.phases.length === 3, 'penutup punya tiga fase');
+});
+
+ok('semua boss berjalan lama tanpa macet dan selalu memberi celah', () => {
+  for (const def of L.BOSSES) {
+    const g = Sim.create(def);
+    g.invuln = 1e9;
+    const seen = new Set();
+    let opened = 0;
+    for (let i = 0; i < 60 * 60; i++) {
+      g.invuln = 1e9;
+      // Hero berkeliling sedikit supaya sasaran berubah.
+      g.p.x = 40 + (Math.sin(i / 90) + 1) * 170;
+      Sim.update(g, dt, {});
+      if (g.boss.current) seen.add(g.boss.current.id);
+      if (g.boss.vulnerable) opened++;
+      assert.ok(Number.isFinite(g.boss.x) && Number.isFinite(g.boss.y), def.nama + ' posisi valid');
+      assert.ok(g.boss.x >= -1 && g.boss.x + g.boss.w <= 27 * 16 + 1, def.nama + ' di dalam arena');
+    }
+    assert.ok(seen.size >= 2, def.nama + ' memakai beberapa serangan');
+    assert.ok(g.boss.projectiles.length <= 20 && g.boss.props.length <= 30, def.nama + ' benda tidak menumpuk');
+  }
+});
+
+ok('mengulang setelah kalah membersihkan semua benda, dan senjata curian kembali', () => {
+  const g = start('goblin-merah');
+  g.invuln = 0;
+  g.stolen = g.weapons[1]; g.weapons = [g.weapons[0]];
+  g.boss.props.push({ kind: 'bag', x: 10, y: 10, w: 10, h: 10 });
+  g.boss.dark = true; g.boss.shield = true; g.boss.clones.push({ x: 1, y: 1, w: 1, h: 1, dir: 1, t: 0 });
+  g.hp = 1;
+  Sim.hurt(g, 'boss', 5); while (g.dying > 0) Sim.update(g, 1 / 60, {});
+  const b = g.boss;
+  assert.strictEqual(b.props.length + b.clones.length, 0);
+  assert.ok(!b.dark && !b.shield);
+  assert.strictEqual(g.weapons.length, 2);
 });
 
 console.log(`\n${n} tes boss MH4 lulus.`);

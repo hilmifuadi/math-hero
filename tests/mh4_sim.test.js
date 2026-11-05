@@ -41,6 +41,46 @@ ok('kontrol kanan menggerakkan hero', () => {
   assert.ok(g.p.x > x0 + 20, 'hero harus bergerak ke kanan');
 });
 
+ok('lompat bisa diatur: ditekan sebentar lebih rendah dari ditahan', () => {
+  const tinggi = (tahan) => {
+    const g = mk(1);
+    for (let i = 0; i < 30; i++) Sim.update(g, 1 / 60, {});
+    const y0 = g.p.y;
+    let puncak = y0;
+    for (let i = 0; i < 60; i++) {
+      Sim.update(g, 1 / 60, { jump: i < tahan });
+      puncak = Math.min(puncak, g.p.y);
+    }
+    return y0 - puncak;
+  };
+  const pendek = tinggi(2), penuh = tinggi(60);
+  assert.ok(pendek < penuh * 0.6, `pendek ${pendek}, penuh ${penuh}`);
+  assert.ok(pendek > 8, 'ketukan tetap terasa sebagai lompatan');
+  assert.ok(penuh > 58, 'lompatan penuh tetap sekitar 4 tile');
+});
+
+ok('tutorial maju hanya setelah pemain melakukan tiap langkah', () => {
+  const Tutor = require('../public/mh4/js/tutor.js');
+  const g = mk(1);
+  for (let i = 0; i < 30; i++) Sim.update(g, 1 / 60, {});
+  const s = Tutor.create(g);
+  const awal = Tutor.update(s, false);
+  assert.ok(/berjalan/.test(awal));
+  assert.strictEqual(Tutor.update(s, false), awal, 'tanpa aksi tidak maju');
+  assert.ok(/tombol kanan/.test(Tutor.update(s, true)), 'teks sentuh berbeda');
+  for (let i = 0; i < 40; i++) Sim.update(g, 1 / 60, { right: true });
+  assert.ok(/melompat/.test(Tutor.update(s, false)));
+  Sim.update(g, 1 / 60, { jump: true });
+  assert.ok(/lompat ganda/.test(Tutor.update(s, false)));
+  for (let i = 0; i < 4; i++) Sim.update(g, 1 / 60, { jump: i < 2 });
+  Sim.update(g, 1 / 60, { jump: true });
+  assert.ok(/menyerang/.test(Tutor.update(s, false)));
+  Sim.update(g, 1 / 60, { attack: true });
+  assert.ok(/ganti senjata/.test(Tutor.update(s, false)));
+  Sim.update(g, 1 / 60, { switch: true });
+  assert.strictEqual(Tutor.update(s, false), null, 'selesai');
+});
+
 ok('lompat dan lompat ganda menaikkan hero', () => {
   const g = mk(1);
   for (let i = 0; i < 30; i++) Sim.update(g, 1 / 60, {});
@@ -95,8 +135,24 @@ ok('gerbang menutup jalan lalu terbuka', () => {
   Sim.takeEvents(g);
   Sim.update(g, 1 / 60, {});
   assert.ok(Sim.takeEvents(g).some((e) => e.type === 'gate'), 'mendekati gerbang memunculkan event gate');
-  Sim.openGate(g);
-  assert.ok(g.gateOpen, 'gerbang terbuka');
+  // Balok jawaban muncul di udara; menyundul mengirim event, jawaban benar membuka pagar.
+  Sim.setQuiz(g, { teks: '2 + 3 = ?', values: [4, 5, 6, 7] });
+  assert.strictEqual(g.quiz.blocks.length, 4, 'empat balok');
+  const blok = g.quiz.blocks[1];
+  assert.ok(blok.x < gateCol * 16, 'balok di depan pagar');
+  g.p.x = blok.x + 2; g.p.y = blok.y + blok.h - 2; g.p.vy = -100; g.prevJump = true; g.invuln = 5;
+  Sim.update(g, 1 / 60, {});
+  assert.ok(!Sim.takeEvents(g).some((e) => e.type === 'quizHit'), 'sundulan tidak memilih jawaban');
+  g.p.x = blok.x + 2; g.p.y = blok.y + 4; g.p.vy = 0; g.face = 1; g.cooldown = 0; g.weapon = 'pedang';
+  Sim.update(g, 1 / 60, { attack: true });
+  assert.ok(Sim.takeEvents(g).some((e) => e.type === 'quizHit' && e.value === 5), 'pukulan senjata dekat memilih jawaban');
+  Sim.answerQuiz(g, 0, false, 'petunjuk');
+  assert.ok(g.quiz.blocks[0].dead && g.quiz.hint, 'jawaban salah memberi petunjuk');
+  assert.ok(!g.gateOpen, 'salah tidak membuka');
+  Sim.answerQuiz(g, 1, true);
+  assert.ok(!g.quiz, 'soal selesai');
+  assert.strictEqual(g.gateIdx, 1, 'gerbang pertama terbuka');
+  while (!g.gateOpen) Sim.openGate(g);
   for (const cell of g.L.gates) assert.strictEqual(g.L.tiles[cell.r * g.L.cols + cell.c], 0, 'sel G hilang setelah dibuka');
   const x0 = g.p.x;
   for (let i = 0; i < 120; i++) Sim.update(g, 1 / 60, { right: true });
@@ -183,7 +239,7 @@ ok('HP berkurang saat bahaya dan isi ulang setelah habis', () => {
   assert.ok(g.hp >= Sim.MAX_HP - 10, 'satu duri tidak menghabiskan semua HP');
   g.invuln = 0;
   g.hp = 10;
-  Sim.hurt(g, 'duri', 10);
+  Sim.hurt(g, 'duri', 10); while (g.dying > 0) Sim.update(g, 1 / 60, {});
   assert.strictEqual(g.hp, Sim.MAX_HP, 'HP habis langsung diisi ulang');
   assert.ok(g.deaths >= 1, 'kematian dihitung');
   assert.ok(Sim.takeEvents(g).some((e) => e.type === 'respawn'), 'HP habis memicu respawn');

@@ -5,7 +5,7 @@
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else ((root.MH4 = root.MH4 || {}).bossSchema = factory());
 })(typeof self !== 'undefined' ? self : this, function () {
-  const KINDS = ['slam', 'projectile_fan', 'falling_hazard', 'charge', 'ground_wave', 'floor_burst', 'summon'];
+  const KINDS = ['slam', 'projectile_fan', 'falling_hazard', 'charge', 'ground_wave', 'floor_burst', 'summon', 'hop', 'teleport', 'shield', 'flight', 'split', 'lights'];
 
   function validate(schema) {
     const bad = [];
@@ -40,9 +40,10 @@
         const a = attacks[entry.id];
         if (!a) { bad.push(`fase ${ph.id}: serangan ${entry.id} tidak ada`); continue; }
         if (!(entry.weight > 0)) bad.push(`fase ${ph.id}: weight ${entry.id} harus > 0`);
-        if (a.opens === false) continue;
+        // signature: celah muncul dari mekanik khas (pantulan, totem, lentera), bukan dari recovery biasa.
+        if (a.opens === false && !a.signature) continue;
         opens = true;
-        const rec = (a.wallStun || a.recovery) * (ph.recoveryMul || 1);
+        const rec = (a.stun || a.wallStun || a.recovery) * (ph.recoveryMul || 1);
         if (rec < opening) bad.push(`fase ${ph.id}: celah ${entry.id} ${rec.toFixed(2)} < ${opening}`);
       }
       if ((ph.pool || []).length && !opens) bad.push(`fase ${ph.id}: tidak ada serangan yang membuka celah`);
