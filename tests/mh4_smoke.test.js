@@ -69,6 +69,23 @@ function runFrames(n) {
 
 const dbg = sandbox.MH4.debug;
 runFrames(3);
+assert.strictEqual(dbg.mode, 'title', 'game mulai dari layar judul');
+dbg.start();
+runFrames(2);
+assert.strictEqual(dbg.mode, 'base', 'setelah judul masuk markas');
+assert.ok(!getEl('dialog').classList.contains('hidden'), 'pertama kali main ada cerita pembuka');
+for (let i = 0; i < 6 && !getEl('dialog').classList.contains('hidden'); i++) getEl('dialog').click();
+assert.ok(getEl('dialog').classList.contains('hidden'), 'cerita selesai');
+dbg.base.x = 12 * 16 + 8; dbg.base.y = 12 * 16;
+dbg.setInput({ jump: true });
+runFrames(3);
+dbg.setInput({ jump: false });
+assert.ok(!getEl('dialog').classList.contains('hidden'), 'tombol aksi membuka dialog Kakek');
+for (let i = 0; i < 6 && !getEl('dialog').classList.contains('hidden'); i++) getEl('dialog').click();
+console.log('ok judul, cerita, dan dialog di markas berjalan');
+dbg.startLevel(0);
+runFrames(3);
+assert.strictEqual(dbg.mode, 'level');
 const g = dbg.game;
 const t0 = g.t;
 
@@ -118,4 +135,10 @@ getEl('menuclose').click();
 runFrames(1);
 console.log('ok toko kembali ke menu tanpa melanjutkan game');
 
-console.log('5 tes asap MH4 lulus.');
+dbg.returnHome();
+runFrames(2);
+assert.strictEqual(dbg.mode, 'base', 'pulang ke kampung');
+assert.strictEqual(dbg.game, null, 'misi lama dilepas');
+console.log('ok pulang dari misi kembali ke markas');
+
+console.log('7 tes asap MH4 lulus.');

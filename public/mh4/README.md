@@ -2,6 +2,13 @@
 
 Halaman: `http://localhost:8091/mh4/` (jalankan `npm start` dari root repo).
 
+## Alur
+
+Layar judul, cerita pembuka, lalu markas top down Kampung Lumbung: berjalan, bicara dengan warga,
+berladang, tidur di rumah, dan berangkat misi lewat Pak Gapura. Misi memakai platformer. Tanaman
+yang disiram tumbuh saat pulang dari misi, dan kabut di kampung menipis tiap boss kalah.
+Logika ada di `js/base/`, sumber aset di `assets/mh4/v2/SUMBER.md`.
+
 ## Kontrol
 
 - Desktop: panah kiri/kanan atau `A`/`D` untuk bergerak, panah atas/`W`/`Spasi`/`Z` untuk
@@ -25,13 +32,21 @@ Halaman: `http://localhost:8091/mh4/` (jalankan `npm start` dari root repo).
 - Tiga tipe musuh level biasa: **Bandit** (`e`, berjalan), **Ninja** (`a`, melompat), dan
   **Penembak** (`g`, berhenti lalu menembak). Tipe dibuka per tier: tier 1 Bandit, tier 2
   menambah Ninja, tier 3 menambah Penembak. Level 1 tetap tanpa musuh sebagai tutorial.
-- Arena boss pertama (`BOSS`) berisi **Penjaga Mesin**: 210 HP, dua fase pada 50% HP, dan
-  empat serangan data-driven: `slam`, `fan`, `rocks`, dan `charge`.
-- Arena boss kedua (`BOSS 2`) berisi **Raja Bandit**: 280 HP, dua fase pada 55% HP, dan lima
-  serangan: `slam`, `fan`, gelombang tanah `wave`, `rocks`, dan `charge`. Gelombang tanah
-  menyusur lantai dan harus dilompati.
-- Setiap serangan punya telegraph, active, dan recovery; boss menerima damage lebih besar
-  saat recovery.
+- Enam senjata: Pedang, Tombak, Palu (dekat), Blaster, Pelontar, Pemantul (jauh). Hero membawa
+  satu dekat dan satu jauh. Senjata baru ada di peti level 2, 4, 7, dan 10, dan bisa diganti di
+  `Toko & Upgrade`. Hanya damage yang naik mengikuti `power` level.
+- Upgrade point: +1 tiap level baru, +2 tiap boss. Health +5 HP, Attack +8%, Speed +3% per
+  tingkat, maksimal 6 tingkat tiap atribut.
+- `BOSS` berisi **Penjaga Mesin** (320 HP): kristal di kepala terbuka saat recovery dan harus
+  diserang sambil melompat. Fase 2 pada 50% menambah batu jatuh dan semburan lantai.
+- `BOSS 2` berisi **Raja Bandit** (380 HP): serudukannya berhenti di dinding dan membuatnya
+  pusing. Fase 2 pada 55% menambah anak buah yang menjatuhkan 4 HP saat dikalahkan.
+- `ACAK` (level 17) memakai `boss/gen.js`: seed menentukan mekanisme, skin, tema arena, dan
+  pola serangan. Seed baru tiap main. Kesulitan menambah mekanisme dan fase.
+- Sasaran serangan dikunci saat telegraph, jadi tanda di layar sama dengan hitbox. Di luar
+  celah damage ke boss hanya 0,25x.
+- Kalah di arena mengulang encounter dari awal fase berjalan; setelah dua kali kalah damage ke
+  hero menjadi 0,75x. Arena 27x15 tile tampil pada zoom 1,5.
 - Tujuan di arena boss terkunci sampai boss kalah.
 
 ## Isi level

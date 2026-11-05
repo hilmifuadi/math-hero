@@ -4,10 +4,20 @@
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else ((root.MH4 = root.MH4 || {}).scene = factory());
 })(typeof self !== 'undefined' ? self : this, function () {
-  const VW = 640, VH = 360, ZOOM = 2, VIEW_W = VW / ZOOM, VIEW_H = VH / ZOOM;
+  const VW = 640, VH = 360, LEVEL_ZOOM = 2, ARENA_ZOOM = 1.5;
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  // Sel gambar, ukuran gambar di dunia, dan baris kaki pada sel.
+  const ENEMY_ART = {
+    walker: { frame: 32, draw: 48, foot: 23 },
+    jumper: { frame: 64, draw: 96, foot: 40 },
+    shooter: { frame: 32, draw: 48, foot: 23 },
+  };
+  const HERO_ART = { frame: 32, draw: 48, foot: 23 };
 
   function create(canvas, theme, bossDef) {
+    // Arena boss lebih zoomed out supaya hero, boss, dan semua tanda serangan selalu sebingkai.
+    const ZOOM = bossDef ? ARENA_ZOOM : LEVEL_ZOOM;
+    const VIEW_W = VW / ZOOM, VIEW_H = VH / ZOOM;
     const ctx = canvas.getContext('2d');
     canvas.width = VW; canvas.height = VH;
     ctx.imageSmoothingEnabled = false;
@@ -18,11 +28,14 @@
     add('bg', theme.bg);
     Object.entries(theme.tiles).forEach(([k, v]) => add('tile.' + k, v));
     Object.entries(theme.decor).forEach(([k, v]) => add('decor.' + k, v));
-    Object.entries(theme.hero).forEach(([k, v]) => { if (k !== 'frame') add('hero.' + k, v); });
+    // Bayu, musuh, dan peti memakai satu keluarga gambar di semua tema (assets/mh4/v2).
+    add('hero.sheet', '../assets/mh4/v2/hero/player.png');
+    add('chest', '../assets/mh4/v2/base/Chest.png');
+    add('ui.bar', '../assets/mh4/v2/ui/bar.png');
     // Sprite musuh level biasa: tiga tipe dengan lima state animasi.
     const enemyStates = ['Idle', 'Walk', 'Attack', 'Hurt', 'Death'];
     for (const id of ['walker', 'jumper', 'shooter']) {
-      for (const st of enemyStates) add('enemy.' + id + '.' + st, '../assets/mh4/enemies/' + id + '/' + st + '.png');
+      for (const st of enemyStates) add('enemy.' + id + '.' + st, '../assets/mh4/v2/enemies/' + id + '/' + st + '.png');
     }
     // Sprite boss hanya dimuat bila level memakai boss; level biasa tidak menambah request.
     if (bossDef && bossDef.sprite) {
@@ -59,7 +72,7 @@
       if (im && im.complete && im.naturalWidth) ctx.drawImage(im, x, y, w, h);
     }
 
-    function drawBg() {
+    function drawBg(level) {
       ctx.fillStyle = theme.palette.sky;
       ctx.fillRect(0, 0, VW, VH);
       const im = images.bg;
@@ -67,10 +80,17 @@
         if (theme.bgTile) {
           // Pola kecil (mis. 64x64) diulang, bukan diregangkan ke seluruh layar.
           const s = theme.bgTile;
-          for (let y = 0; y < VH; y += s) for (let x = 0; x < VW; x += s) ctx.drawImage(im, x, y, s, s);
+          const off = -Math.floor(camX * 0.4) % s;
+          for (let y = 0; y < VH; y += s) for (let x = off; x < VW; x += s) ctx.drawImage(im, x, y, s, s);
         } else {
-          ctx.drawImage(im, 0, 0, VW, VH);
+          // Latar lebih lebar dari layar dan bergeser pelan mengikuti kamera (parallax).
+          const span = Math.max(1, level.map[0].length * 16 - VIEW_W);
+          const f = clamp(camX / span, 0, 1);
+          ctx.drawImage(im, -f * VW * 0.25, 0, VW * 1.25, VH);
         }
+        // Latar dibuat sedikit pudar supaya tanah dan bahaya lebih menonjol.
+        ctx.fillStyle = 'rgba(255,250,235,.1)';
+        ctx.fillRect(0, 0, VW, VH);
       } else {
         ctx.fillStyle = theme.palette.groundDark || '#bfe6a0';
         ctx.fillRect(0, VH * .55, VW, VH * .45);
@@ -87,7 +107,10 @@
         const y = g * 16;
         const kind = h % 3 === 0 ? 'tree' : h % 3 === 1 ? 'bush' : 'grass';
         const [w, hh] = ds[kind] || [16, 16];
+        // Dekorasi tidak bisa ditabrak, jadi dibuat pudar agar tidak dikira rintangan.
+        ctx.globalAlpha = 0.55;
         drawImage('decor.' + kind, c * 16 + (16 - w) / 2, y - hh, w, hh);
+        ctx.globalAlpha = 1;
       }
     }
 
@@ -99,8 +122,14 @@
           if (ch === '#') {
             const above = chAt(level, c, r - 1);
             if (!solidCh(above)) drawImage('tile.top', x, y, 16, 16);
-            else if (r % 4 === 0) drawImage('tile.fillDark', x, y, 16, 16);
-            else drawImage('tile.fill', x, y, 16, 16);
+            else {
+              // Isi tanah menggelap makin dalam, jadi permukaan pijakan terbaca jelas.
+              drawImage('tile.fill', x, y, 16, 16);
+              let depth = 1;
+              while (depth < 4 && solidCh(chAt(level, c, r - depth - 1))) depth++;
+              ctx.fillStyle = `rgba(14,10,22,${Math.min(0.72, 0.2 + depth * 0.16)})`;
+              ctx.fillRect(x, y, 16, 16);
+            }
           } else if (ch === '=') {
             drawImage('tile.platform', x, y, 16, 16);
           } else if (ch === 'G') {
@@ -157,14 +186,14 @@
         ctx.closePath(); ctx.fill();
       }
       for (const ch of game.L.chests) {
-        const x = ch.x - 6, y = ch.y - 1;
-        ctx.fillStyle = '#8a5a2b'; ctx.fillRect(x, y + 4, 18, 12);
-        ctx.fillStyle = ch.got ? '#6f6f6f' : theme.palette.gold; ctx.fillRect(x, y - 1, 18, 7);
-        ctx.fillStyle = '#4a2f18'; ctx.fillRect(x + 7, y + 4, 4, 5);
+        const x = ch.x - 1, y = ch.y - 1;
         if (!ch.got) {
-          ctx.fillStyle = 'rgba(255,240,150,.35)';
-          ctx.beginPath(); ctx.arc(x + 9, y + 7, 14 + Math.sin(time * 4) * 2, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = 'rgba(255,240,150,.3)';
+          ctx.beginPath(); ctx.arc(x + 8, y + 8, 14 + Math.sin(time * 4) * 2, 0, Math.PI * 2); ctx.fill();
         }
+        ctx.globalAlpha = ch.got ? 0.45 : 1;
+        drawImage('chest', x, y, 16, 16);
+        ctx.globalAlpha = 1;
       }
       const goal = game.L.goal;
       if (goal) {
@@ -206,15 +235,16 @@
         const key = 'enemy.' + (e.kind || 'walker') + '.' + state;
         const im = images[key];
         if (im && im.complete && im.naturalWidth) {
-          const frame = 48;
+          const art = ENEMY_ART[e.kind] || ENEMY_ART.walker;
+          const frame = art.frame;
           const count = Math.max(1, Math.floor(im.naturalWidth / frame));
           const rate = state === 'Walk' ? 8 : state === 'Attack' ? 9 : state === 'Hurt' ? 6 : 4;
           const idx = Math.floor((e.animT || 0) * rate + e.id * 0.37) % count;
-          const dw = 28, dh = 28;
+          const dw = art.draw, dh = art.draw, k = art.draw / frame;
           const cx = e.x + e.w / 2, bottom = e.y + e.h;
           ctx.save();
           if (e.dir < 0) { ctx.translate(cx, 0); ctx.scale(-1, 1); ctx.translate(-cx, 0); }
-          ctx.drawImage(im, idx * frame, 0, frame, frame, cx - dw / 2, bottom - dh + 1, dw, dh);
+          ctx.drawImage(im, idx * frame, 0, frame, frame, cx - dw / 2, bottom - art.foot * k, dw, dh);
           ctx.restore();
         } else {
           ctx.fillStyle = e.hurtT > 0 ? '#ffffff' : '#b04ad9';
@@ -284,40 +314,165 @@
           ctx.fillStyle = 'rgba(255,180,90,.35)';
           ctx.fillRect(h.x + 2, h.y + h.h - 3, h.w - 4, 3);
         }
-        if (b.mode === 'telegraph' && b.current) {
-          // Telegraph jelas: kilau di badan boss + garis bahaya di lantai untuk slam.
-          const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
-          const blink = 0.45 + 0.4 * Math.abs(Math.sin(time * 10));
-          ctx.save();
-          ctx.globalAlpha = blink;
-          ctx.strokeStyle = b.current.def.kind === 'charge' ? '#ff9a3c' : '#ff5a5a';
-          ctx.lineWidth = 2;
-          ctx.beginPath(); ctx.arc(cx, cy, b.w * 0.85, 0, Math.PI * 2); ctx.stroke();
-          if (b.current.def.kind === 'slam') {
-            const gy = b.y + b.h;
-            ctx.fillStyle = 'rgba(255,90,90,.22)';
-            ctx.fillRect(cx - b.current.def.radius, gy - 2, b.current.def.radius * 2, 3);
-          }
-          if (b.current.def.kind === 'charge') {
-            ctx.beginPath();
-            ctx.moveTo(cx, cy);
-            ctx.lineTo(cx + b.facing * b.current.def.range, cy);
-            ctx.stroke();
-          }
-          ctx.restore();
-        }
+        drawZones(b, time);
+        if (b.mode === 'telegraph' && b.current) drawTelegraph(b, game, time);
+        drawOpening(b, time);
       }
+      drawFx(game);
       for (const n of game.numbers) {
         const a = Math.max(0, n.life / n.max);
         ctx.save();
         ctx.globalAlpha = a;
-        ctx.font = 'bold 11px system-ui, sans-serif';
+        ctx.font = (n.target === 'weak' ? 'bold 15px' : n.target === 'guard' ? 'bold 9px' : 'bold 11px') + ' system-ui, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillStyle = n.target === 'boss' ? '#ffd84a' : n.target === 'enemy' ? '#ffffff' : '#ff7b7b';
+        ctx.fillStyle = n.target === 'weak' ? '#ffe94a' : n.target === 'boss' ? '#ffd84a' : n.target === 'guard' ? '#b8c2cc'
+          : n.target === 'heal' ? '#7dff9e' : n.target === 'enemy' ? '#ffffff' : '#ff7b7b';
         ctx.strokeStyle = 'rgba(0,0,0,.8)'; ctx.lineWidth = 2.5;
         ctx.strokeText(String(n.amount), n.x, n.y);
         ctx.fillText(String(n.amount), n.x, n.y);
+        ctx.restore();
+      }
+    }
+
+    // Tiap jenis serangan punya tanda sendiri, dan tanda itu memakai sasaran yang sudah dikunci
+    // di BossMachine, jadi area yang ditandai sama dengan area yang benar-benar berbahaya.
+    function drawTelegraph(b, game, time) {
+      const def = b.current.def, plan = b.current.plan || {};
+      const blink = 0.45 + 0.4 * Math.abs(Math.sin(time * 10));
+      const floor = b.y + b.h, cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+      ctx.save();
+      ctx.globalAlpha = blink;
+      if (def.kind === 'slam') {
+        ctx.fillStyle = 'rgba(255,70,70,.55)';
+        ctx.fillRect(cx - def.radius, floor - 6, def.radius * 2, 6);
+        ctx.fillStyle = '#ffd0d0';
+        for (const s of [-1, 1]) ctx.fillRect(cx + s * def.radius - 1, floor - 16, 2, 16);
+      } else if (def.kind === 'charge') {
+        const to = plan.targetX === undefined ? b.x : plan.targetX;
+        const x0 = Math.min(b.x, to), x1 = Math.max(b.x, to) + b.w;
+        ctx.fillStyle = 'rgba(255,150,50,.3)';
+        ctx.fillRect(x0, b.y, x1 - x0, b.h);
+        ctx.strokeStyle = '#ffb060'; ctx.lineWidth = 2;
+        ctx.strokeRect(x0, b.y, x1 - x0, b.h);
+        const tip = plan.dir > 0 ? x1 - 4 : x0 + 4;
+        ctx.beginPath();
+        ctx.moveTo(tip - plan.dir * 12, cy - 9); ctx.lineTo(tip, cy); ctx.lineTo(tip - plan.dir * 12, cy + 9);
+        ctx.stroke();
+      } else if (def.kind === 'projectile_fan') {
+        const p = game.p, px = p.x + p.w / 2, py = p.y + p.h / 2;
+        const angle = Math.atan2(py - cy, px - cx), n = def.count || 1;
+        ctx.strokeStyle = '#ff7070'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
+        for (let i = 0; i < n; i++) {
+          const a = angle + (i - (n - 1) / 2) * (def.spread || 0);
+          ctx.beginPath(); ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + Math.cos(a) * 120, cy + Math.sin(a) * 120);
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
+      } else if (def.kind === 'ground_wave') {
+        ctx.fillStyle = 'rgba(255,190,70,.6)';
+        const h = def.height || 10;
+        for (let i = 1; i <= 4; i++) {
+          const x = cx + plan.dir * (b.w / 2 + i * 22);
+          ctx.beginPath();
+          ctx.moveTo(x, floor - h); ctx.lineTo(x + plan.dir * 12, floor - h / 2); ctx.lineTo(x, floor);
+          ctx.closePath(); ctx.fill();
+        }
+      } else if (def.kind === 'falling_hazard') {
+        for (const x of plan.targets || []) drawRockMarker(x, 18, plan.groundY || floor);
+      } else if (def.kind === 'floor_burst') {
+        for (const z of plan.zones || []) {
+          ctx.fillStyle = 'rgba(255,110,40,.3)';
+          ctx.fillRect(z.x, z.y, z.w, z.h);
+          ctx.strokeStyle = '#ff9a50'; ctx.lineWidth = 1.5;
+          ctx.strokeRect(z.x, z.y, z.w, z.h);
+        }
+      } else if (def.kind === 'summon') {
+        ctx.strokeStyle = '#c58aff'; ctx.lineWidth = 2;
+        for (const x of plan.spots || []) {
+          ctx.beginPath(); ctx.ellipse(x + 7, plan.groundY - 2, 12, 4, 0, 0, Math.PI * 2); ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+
+    function drawRockMarker(x, w, groundY) {
+      ctx.fillStyle = 'rgba(255,70,70,.65)';
+      ctx.fillRect(x, groundY - 4, w, 4);
+      ctx.fillStyle = 'rgba(255,70,70,.14)';
+      ctx.fillRect(x, 0, w, groundY - 4);
+    }
+
+    // Zona lantai aktif, dan penanda batu tetap tampil sampai batunya mendarat.
+    function drawZones(b, time) {
+      const groundY = b.y + b.h;
+      for (const h of b.hazards) drawRockMarker(h.x, h.w, groundY);
+      for (const z of b.zones) {
+        ctx.fillStyle = '#ff7a2a';
+        ctx.fillRect(z.x, z.y, z.w, z.h);
+        ctx.fillStyle = '#ffd24a';
+        const wob = Math.sin(time * 30) * 3;
+        ctx.fillRect(z.x + 6 + wob, z.y + 6, z.w - 12, z.h - 6);
+      }
+    }
+
+    // Celah menyerang harus terlihat di badan boss, bukan hanya di bar HP.
+    function drawOpening(b, time) {
+      const wp = b.schema.weakPoint;
+      if (wp) {
+        const x = b.x + wp.ox + wp.w / 2, y = b.y + wp.oy + wp.h / 2;
+        const r = b.vulnerable ? 9 + Math.sin(time * 12) * 1.5 : 6;
+        ctx.save();
+        ctx.fillStyle = b.vulnerable ? '#7ff5ff' : '#5b6672';
+        ctx.strokeStyle = b.vulnerable ? '#ffffff' : '#2b323a';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x, y - r); ctx.lineTo(x + r * 0.8, y); ctx.lineTo(x, y + r); ctx.lineTo(x - r * 0.8, y);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        if (b.vulnerable) {
+          ctx.globalAlpha = 0.5 + 0.4 * Math.sin(time * 12);
+          ctx.strokeStyle = '#7ff5ff';
+          ctx.beginPath(); ctx.arc(x, y, r + 6, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.restore();
+      }
+      if (b.stunned) {
+        for (let i = 0; i < 3; i++) {
+          const a = time * 5 + i * 2.09;
+          star(b.x + b.w / 2 + Math.cos(a) * 18, b.y - 4 + Math.sin(a) * 4, 4, a);
+        }
+      }
+      if (b.vulnerable) {
+        ctx.save();
+        ctx.font = 'bold 12px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = 'rgba(0,0,0,.85)';
+        ctx.fillStyle = '#7dff9e';
+        const text = wp ? 'KRISTAL!' : 'SERANG!';
+        ctx.strokeText(text, b.x + b.w / 2, b.y - 14);
+        ctx.fillText(text, b.x + b.w / 2, b.y - 14);
+        ctx.restore();
+      }
+    }
+
+    function drawFx(game) {
+      for (const f of game.fx || []) {
+        const a = Math.max(0, f.life / f.max);
+        ctx.save();
+        ctx.globalAlpha = a;
+        if (f.kind === 'blast') {
+          ctx.fillStyle = 'rgba(255,170,90,.55)';
+          ctx.strokeStyle = '#ffe0b0';
+          ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(f.x, f.y, f.radius * (1.1 - 0.3 * a), 0, Math.PI * 2);
+          ctx.fill(); ctx.stroke();
+        } else {
+          ctx.fillStyle = '#ffb060';
+          const h = 4 + 14 * a;
+          ctx.fillRect(f.x - f.radius, f.y - h, f.radius * 2, h);
+        }
         ctx.restore();
       }
     }
@@ -328,7 +483,8 @@
       let key = 'boss.idle';
       let rate = 5;
       if (b.mode === 'telegraph') { key = 'boss.prepare'; rate = 4; }
-      else if (b.mode === 'attack' || b.mode === 'recovery') { key = 'boss.attack'; rate = 10; }
+      else if (b.mode === 'attack') { key = 'boss.attack'; rate = 10; }
+      else if (b.mode === 'recovery') { key = b.vulnerable ? 'boss.hurt' : 'boss.idle'; rate = 6; }
       else if (b.mode === 'transition') { key = 'boss.hurt'; rate = 6; }
       const im = images[key];
       if (!(im && im.complete && im.naturalWidth)) {
@@ -339,7 +495,8 @@
       const count = Math.max(1, Math.floor(im.naturalWidth / frame));
       const idx = Math.floor(time * rate) % count;
       const face = b.facing < 0 ? -1 : 1;
-      const drawW = frame * 1.5, drawH = frame * 1.5;
+      // Batas tinggi supaya kepala boss tidak masuk ke balik bar HP.
+      const drawH = Math.min(frame * 1.5, 116), drawW = drawH;
       const cx = b.x + b.w / 2;
       const top = b.y + b.h - drawH;
       ctx.save();
@@ -354,18 +511,20 @@
       const p = game.p;
       if (game.invuln > 0 && Math.floor(time * 20) % 2 === 0) return;
       const anim = game.anim || 'idle';
-      const key = 'hero.' + (anim === 'run' ? 'run' : anim === 'jump' ? 'jump' : 'idle');
-      const im = images[key];
+      const im = images['hero.sheet'];
       const face = game.face < 0 ? -1 : 1;
       const cx = p.x + p.w / 2;
       ctx.save();
       ctx.translate(cx, p.y + p.h);
       ctx.scale(face, 1);
       if (im && im.complete && im.naturalWidth) {
-        const fw = theme.hero.frame || 32;
-        const count = Math.max(1, Math.floor(im.naturalWidth / fw));
-        const idx = Math.floor(time * (anim === 'run' ? 12 : anim === 'jump' ? 10 : 6)) % count;
-        ctx.drawImage(im, idx * fw, 0, fw, fw, -13, -26, 26, 26);
+        // Lembar Cute Fantasy: baris samping 1 diam, 4 jalan, 7 serang.
+        const art = HERO_ART, fw = art.frame, k = art.draw / fw;
+        let row = 1, col = Math.floor(time * 6) % 6;
+        if (game.swing) { row = 7; col = Math.min(3, Math.floor(game.swing.t / game.swing.dur * 4)); }
+        else if (anim === 'run') { row = 4; col = Math.floor(time * 12) % 6; }
+        else if (anim === 'jump') { row = 4; col = game.p.vy < 0 ? 1 : 4; }
+        ctx.drawImage(im, col * fw, row * fw, fw, fw, -art.draw / 2, -art.foot * k, art.draw, art.draw);
       } else {
         ctx.fillStyle = '#ff7bd5';
         ctx.fillRect(-7, -26, 14, 26);
@@ -375,33 +534,39 @@
 
     function drawHud(game, level, ui) {
       ctx.save();
-      ctx.fillStyle = theme.palette.panel;
-      ctx.fillRect(10, 8, 280, 30);
-      ctx.fillStyle = theme.palette.text;
-      ctx.font = 'bold 15px system-ui, sans-serif';
+      const woodPanel = (x, y, w, h) => {
+        ctx.fillStyle = 'rgba(58,33,18,.92)';
+        ctx.fillRect(x, y, w, h);
+        ctx.strokeStyle = '#d9a35a'; ctx.lineWidth = 2;
+        ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+      };
+      woodPanel(10, 8, 240, 30);
+      ctx.fillStyle = '#ffe9b8';
+      ctx.font = 'bold 14px system-ui, sans-serif';
       ctx.textBaseline = 'middle';
-      ctx.fillText(`Level ${level.id}: ${level.nama}`, 20, 24);
+      ctx.fillText(level.boss ? level.nama : `Misi ${level.id}: ${level.nama}`, 20, 24);
 
-      // HP hero: bar 3 segmen (30 HP) + angka, senjata aktif, dan bintang.
-      const hx = 300;
-      ctx.fillStyle = theme.palette.panel;
-      ctx.fillRect(hx, 8, 330, 30);
+      // HP hero: bar kayu + angka, senjata aktif, dan bintang.
+      const hx = 258;
+      woodPanel(hx, 8, 372, 30);
       const hp = Math.max(0, game.hp || 0), maxHp = game.maxHp || 30;
-      const segs = 3, per = maxHp / segs, sw = 32;
-      for (let i = 0; i < segs; i++) {
-        const filled = Math.max(0, Math.min(1, (hp - i * per) / per));
-        ctx.fillStyle = 'rgba(0,0,0,.5)';
-        ctx.fillRect(hx + 10 + i * (sw + 3), 16, sw, 12);
-        ctx.fillStyle = filled > 0.5 ? '#ff6b6b' : filled > 0 ? '#ffb36b' : '#5a2a2a';
-        ctx.fillRect(hx + 10 + i * (sw + 3), 16, sw * filled, 12);
+      const bar = images['ui.bar'];
+      const barW = 122, barH = 24, barX = hx + 7, barY = 11;
+      if (bar && bar.complete && bar.naturalWidth) {
+        ctx.drawImage(bar, barX, barY, barW, barH);
+        // Bagian HP yang hilang ditutup warna gelap lubang bar.
+        const inX = barX + barW * 0.05, inW = barW * 0.9;
+        const gone = inW * (1 - Math.min(1, hp / maxHp));
+        ctx.fillStyle = '#2a1a22';
+        ctx.fillRect(inX + inW - gone, barY + barH * 0.25, gone, barH * 0.5);
       }
       ctx.font = 'bold 13px system-ui, sans-serif';
-      ctx.fillStyle = '#ffd9d9';
-      ctx.fillText(`${hp}/${maxHp}`, hx + 118, 24);
-      ctx.fillStyle = game.weapon === 'blaster' ? '#7be0ff' : '#ffe066';
-      ctx.fillText(game.weapon === 'blaster' ? 'Blaster' : 'Pedang', hx + 170, 24);
-      ctx.fillStyle = theme.palette.star;
-      ctx.fillText(`\u2605 ${game.stars}/${game.starTotal}`, hx + 246, 24);
+      ctx.fillStyle = '#ffe2d6';
+      ctx.fillText(`${hp}/${maxHp}`, hx + 134, 24);
+      ctx.fillStyle = game.weaponColor || '#ffe066';
+      ctx.fillText(game.weaponName || '', hx + 196, 24);
+      ctx.fillStyle = '#ffd84a';
+      ctx.fillText(`\u2605 ${game.stars}/${game.starTotal}`, hx + 300, 24);
 
       // Bar boss: hanya tampil di arena boss dan belum kalah.
       const b = game.boss;
@@ -416,11 +581,12 @@
         ctx.fillStyle = 'rgba(255,255,255,.14)';
         ctx.fillRect(bx, by, bw, 12);
         const frac = Math.max(0, b.hp / b.maxHp);
-        ctx.fillStyle = b.mode === 'transition' ? '#ffd84a' : '#ff5a5a';
+        ctx.fillStyle = b.mode === 'transition' ? '#ffd84a' : b.vulnerable ? '#7dff9e' : '#ff5a5a';
         ctx.fillRect(bx, by, bw * frac, 12);
-        if (b.mode === 'recovery') {
-          ctx.fillStyle = 'rgba(255,255,255,.35)';
-          ctx.fillRect(bx, by, bw * frac, 12);
+        // Garis ambang fase: tempat pertarungan berubah.
+        ctx.fillStyle = '#ffffff';
+        for (const ph of b.schema.phases) {
+          if (ph.hpFrom < 1) ctx.fillRect(bx + bw * ph.hpFrom - 1, by - 2, 2, 16);
         }
         ctx.textAlign = 'left';
       }
@@ -434,16 +600,19 @@
       const mapW = level.map[0].length * 16, mapH = level.map.length * 16;
       const tx = clamp(p.x + p.w / 2 - VIEW_W / 2, 0, Math.max(0, mapW - VIEW_W));
       const ty = clamp(p.y + p.h / 2 - VIEW_H / 2, 0, Math.max(0, mapH - VIEW_H));
+      // (Peta arena sedikit lebih lebar dari layar, jadi kamera hampir diam.)
       if (!inited) { camX = tx; camY = ty; inited = true; }
       const k = 1 - Math.pow(0.001, ui.dt || 1 / 60);
       camX += (tx - camX) * k;
       camY += (ty - camY) * k;
 
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      drawBg();
+      ctx.imageSmoothingEnabled = false;
+      drawBg(level);
       ctx.save();
       ctx.scale(ZOOM, ZOOM);
-      ctx.translate(-Math.round(camX), -Math.round(camY));
+      // Dibulatkan ke piksel layar supaya tile tidak bergaris pada zoom pecahan.
+      ctx.translate(-Math.round(camX * ZOOM) / ZOOM, -Math.round(camY * ZOOM) / ZOOM);
       const c0 = Math.max(0, Math.floor(camX / 16) - 1), c1 = Math.min(level.map[0].length - 1, Math.ceil((camX + VIEW_W) / 16) + 1);
       const r0 = Math.max(0, Math.floor(camY / 16) - 1), r1 = Math.min(level.map.length - 1, Math.ceil((camY + VIEW_H) / 16) + 1);
       drawDecor(level, c0, c1, r0, r1);
@@ -459,7 +628,13 @@
         ctx.save();
         ctx.globalAlpha = Math.min(1, ui.toastT || 1);
         ctx.fillStyle = 'rgba(0,0,0,.72)';
-        ctx.font = 'bold 18px system-ui, sans-serif';
+        // Petunjuk panjang mengecil sendiri supaya tetap muat di layar.
+        let size = 18;
+        ctx.font = `bold ${size}px system-ui, sans-serif`;
+        while (size > 11 && ctx.measureText(ui.toast).width + 32 > VW - 16) {
+          size--;
+          ctx.font = `bold ${size}px system-ui, sans-serif`;
+        }
         const w = ctx.measureText(ui.toast).width + 32;
         ctx.fillRect(VW / 2 - w / 2, ty, w, 34);
         ctx.fillStyle = '#fff';

@@ -87,7 +87,8 @@ ok('loadout menjumlahkan efek equipment', () => {
   p.equipped = { pedang: 'mata-baja', blaster: 'pendingin', armor: 'zirah-besi', jimat: 'magnet-koin' };
   const lo = Progress.loadout(p);
   assert.strictEqual(lo.meleeMul, 1.2);
-  assert.strictEqual(lo.cooldownMul, 0.8);
+  assert.strictEqual(lo.rangedCooldownMul, 0.8);
+  assert.strictEqual(lo.cooldownMul, 1, 'Pendingin tidak mempercepat senjata dekat');
   assert.strictEqual(lo.maxHp, 20);
   assert.strictEqual(lo.coinMul, 1.25);
 });
@@ -202,10 +203,69 @@ ok('dokumen cloud hanya berisi bidang yang diizinkan dan pilih data terbaru', ()
   assert.strictEqual(Progress.newer(a, null), a);
   const doc = Progress.toCloud(a);
   assert.deepStrictEqual(Object.keys(doc).sort(), [
-    'best', 'equipped', 'koin', 'nama', 'owned', 'totalStars', 'uid', 'updatedAt', 'v',
+    'base', 'best', 'equipped', 'gear', 'koin', 'nama', 'owned', 'points', 'stats', 'totalStars', 'uid', 'updatedAt', 'v', 'weapons',
   ].sort());
   assert.strictEqual(doc.uid, a.uid);
   assert.strictEqual(JSON.parse(JSON.stringify(doc)).v, Progress.VERSION);
+});
+
+ok('level baru memberi poin upgrade, ulangan tidak, boss dua poin', () => {
+  const p = Progress.newProfile('A');
+  assert.strictEqual(Progress.gain(p, { levelId: 1, stars: 1 }).points, 1);
+  assert.strictEqual(Progress.gain(p, { levelId: 1, stars: 1 }).points, 0, 'main ulang tanpa poin');
+  assert.strictEqual(Progress.gain(p, { levelId: 15, boss: true }).points, 2);
+  assert.strictEqual(p.points, 3);
+});
+
+ok('poin dibelanjakan ke atribut, ada batasnya, dan efeknya nyata', () => {
+  const p = Progress.newProfile('A');
+  assert.strictEqual(Progress.spendPoint(p, 'hp').reason, 'poin-kurang');
+  p.points = 20;
+  for (let i = 0; i < 6; i++) assert.ok(Progress.spendPoint(p, 'hp').ok);
+  assert.strictEqual(Progress.spendPoint(p, 'hp').reason, 'sudah-penuh');
+  assert.ok(Progress.spendPoint(p, 'atk').ok);
+  assert.ok(Progress.spendPoint(p, 'spd').ok);
+  const lo = Progress.loadout(p);
+  assert.strictEqual(lo.maxHp, 30, '6 x 5 HP');
+  assert.ok(Math.abs(lo.meleeMul - 1.08) < 1e-9 && Math.abs(lo.rangedMul - 1.08) < 1e-9);
+  assert.ok(Math.abs(lo.speedMul - 1.03) < 1e-9);
+  const g = Sim.create(LEVEL, { loadout: lo });
+  assert.strictEqual(g.maxHp, 60);
+});
+
+ok('peti memberi senjata sekali, bisa dipakai, dan masuk simulasi', () => {
+  const p = Progress.newProfile('A');
+  assert.strictEqual(Progress.openChest(p, 1), null, 'peti level 1 tanpa senjata');
+  assert.strictEqual(Progress.openChest(p, 2), 'tombak');
+  assert.strictEqual(Progress.openChest(p, 2), null, 'tidak dobel');
+  assert.strictEqual(Progress.equipWeapon(p, 'palu').reason, 'belum-punya');
+  assert.ok(Progress.equipWeapon(p, 'tombak').ok);
+  assert.strictEqual(p.gear.melee, 'tombak');
+  assert.strictEqual(p.gear.ranged, 'blaster', 'slot jauh tidak berubah');
+  const g = Sim.create(LEVEL, { loadout: Progress.loadout(p) });
+  assert.strictEqual(g.weapon, 'tombak');
+  assert.strictEqual(g.weaponName, 'Tombak');
+  p.gear.melee = 'pedang';
+  Sim.applyLoadout(g, Progress.loadout(p));
+  assert.strictEqual(g.weapon, 'pedang', 'ganti di menu langsung berlaku');
+});
+
+ok('simpanan lama dimigrasi: poin dihitung dari level selesai, data palsu dibuang', () => {
+  const old = Progress.normalize({
+    uid: 'abcdef0123456789',
+    best: { 1: { stars: 3, done: true }, 2: { stars: 2, done: true }, 15: { done: true, boss: true } },
+  });
+  assert.strictEqual(old.points, 4, 'dua level + satu boss');
+  assert.deepStrictEqual(old.gear, { melee: 'pedang', ranged: 'blaster' });
+  const bad = Progress.normalize({
+    uid: 'abcdef0123456789', points: 5, stats: { hp: 99, atk: -3 },
+    weapons: ['palu', 'senapan-ajaib'], gear: { melee: 'tombak', ranged: 'palu' },
+  });
+  assert.strictEqual(bad.stats.hp, 6, 'atribut dibatasi');
+  assert.strictEqual(bad.stats.atk, 0);
+  assert.ok(bad.weapons.includes('palu') && !bad.weapons.includes('senapan-ajaib'));
+  assert.strictEqual(bad.gear.melee, 'pedang', 'tombak belum dimiliki');
+  assert.strictEqual(bad.gear.ranged, 'blaster', 'palu bukan senjata jauh');
 });
 
 console.log(`\n${n} tes progresi MH4 lulus.`);

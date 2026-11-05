@@ -80,6 +80,13 @@ Urutan pekerjaan:
   berjalan lokal. Level terbuka berurutan; koin dari bintang/peti/boss dipakai membeli item.
 - **Paket 1 review (selesai):** perbaikan beku saat lompat, menu jeda menggantikan chip di atas
   tombol, ajakan putar layar, dan tes asap `tests/mh4_smoke.test.js`. Rincian di WL-013.
+- **Paket 2 review (selesai):** kalah mengulang encounter, telegraph sama dengan hitbox, arena
+  27x15 pada zoom 1,5, weak point, summon, semburan lantai, tabrak dinding, dan generator boss
+  `public/mh4/js/boss/gen.js` (level 17 `ACAK`). Rincian di WL-014.
+- **Paket 3 review (selesai):** enam senjata dengan identitas nyata dari peti, upgrade point,
+  dan `power` per level. Rincian di WL-015.
+- **Paket 4 review (selesai):** markas top down `public/mh4/js/base/`, cerita per bab, hero Bayu,
+  aset `public/assets/mh4/v2/`. Game kini mulai dari judul dan markas. Rincian di WL-016.
 - **Fase 4:** perluasan tema, chunk, senjata, boss, progresi.
 
 Jangan melompat ke Fase 4 sebelum Fase 3 stabil dan bisa dimainkan.

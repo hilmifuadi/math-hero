@@ -1,10 +1,14 @@
 // Math Hero 4: BossMachine murni. Tidak menyentuh canvas/DOM/Math.random.
 // Data (BossSchema) memilih serangan; primitif di file ini yang menjalankan
-// telegraph -> attack -> recovery, fase, proyektil, dan hazard.
+// telegraph -> attack -> recovery, fase, proyektil, hazard, zona lantai, dan summon.
+// Sasaran serangan dikunci saat telegraph (`current.plan`), jadi tanda yang digambar
+// renderer selalu sama dengan hitbox yang benar-benar aktif.
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else ((root.MH4 = root.MH4 || {}).bossMachine = factory());
 })(typeof self !== 'undefined' ? self : this, function () {
+  const GUARD_MUL = 0.25, OPEN_MUL = 1.6, WEAK_MUL = 2;
+
   function rng(seed) {
     let a = (seed >>> 0) || 1;
     const f = () => {
@@ -22,14 +26,15 @@
   function create(schema, opts) {
     opts = opts || {};
     const body = schema.body || { w: 60, h: 76 };
+    const x = opts.x === undefined ? 0 : opts.x, y = opts.y === undefined ? 0 : opts.y;
     return {
       schema, rng: opts.rng || rng(opts.seed || 1),
       t: 0, hp: schema.maxHp, maxHp: schema.maxHp,
       phaseIndex: 0, mode: 'idle', timer: opts.intro === undefined ? 1.0 : opts.intro,
-      current: null, lastAttack: null, vulnerable: false, invuln: 0,
-      x: opts.x === undefined ? 0 : opts.x, y: opts.y === undefined ? 0 : opts.y,
+      current: null, lastAttack: null, vulnerable: false, invuln: 0, stunned: false,
+      x, y, spawnX: x, spawnY: y,
       w: body.w, h: body.h, facing: opts.facing || -1,
-      projectiles: [], hazards: [], attackCount: 0, defeated: false,
+      projectiles: [], hazards: [], zones: [], attackCount: 0, defeated: false,
     };
   }
 
@@ -45,25 +50,75 @@
     return pool[pool.length - 1].id;
   }
 
-  function pickAttack(state) {
-    const pool = phaseOf(state).pool;
+  function pickAttack(state, ctx) {
+    let pool = phaseOf(state).pool;
+    // Summon tidak dipilih bila minion masih penuh, supaya layar tidak sesak.
+    const room = ctx && ctx.minions !== undefined
+      ? ctx.minions < ((state.schema.fairness && state.schema.fairness.maxSummons) || 0) : true;
+    if (!room) {
+      const rest = pool.filter((e) => state.schema.attacks[e.id].kind !== 'summon');
+      if (rest.length) pool = rest;
+    }
     let id = weightedPick(state, pool);
     // Hindari dua serangan identik berurutan bila masih ada pilihan lain.
     if (id === state.lastAttack && pool.length > 1) id = weightedPick(state, pool);
     return id;
   }
 
-  function startTelegraph(state) {
-    const id = pickAttack(state);
+  // Kunci sasaran serangan. Dipanggil saat telegraph, atau saat attack bila plan belum ada.
+  function planAttack(state, def, ctx) {
+    const player = (ctx && ctx.player) || { x: state.x, y: state.y, w: 1, h: 1 };
+    const arena = (ctx && ctx.arena) || state.arena || { left: 0, right: 640, top: 0, groundY: 400 };
+    const px = player.x + player.w / 2;
+    const cx = state.x + state.w / 2;
+    const plan = { dir: px >= cx ? 1 : -1 };
+    if (def.kind === 'falling_hazard') {
+      const n = def.count || 1;
+      plan.targets = [];
+      for (let i = 0; i < n; i++) {
+        const hx = px + (i - (n - 1) / 2) * (def.spreadX || 50);
+        plan.targets.push(Math.max(arena.left + 10, Math.min(arena.right - 28, hx - 9)));
+      }
+      plan.groundY = arena.groundY;
+    } else if (def.kind === 'charge') {
+      const hi = arena.right - state.w;
+      const far = plan.dir > 0 ? hi : arena.left;
+      const range = def.toWall ? Infinity : (def.range || 180);
+      plan.targetX = plan.dir > 0 ? Math.min(far, state.x + range) : Math.max(far, state.x - range);
+      plan.hitsWall = !!def.toWall;
+    } else if (def.kind === 'floor_burst') {
+      const n = def.count || 2, w = def.zoneW || 40, gap = def.gap || 72, h = def.zoneH || 44;
+      plan.zones = [];
+      for (let i = 0; i < n; i++) {
+        const zx = px - w / 2 + (i - (n - 1) / 2) * (w + gap);
+        const x = Math.max(arena.left, Math.min(arena.right - w, zx));
+        plan.zones.push({ x, y: arena.groundY - h, w, h, damage: def.damage });
+      }
+    } else if (def.kind === 'summon') {
+      const n = def.count || 1;
+      plan.spots = [];
+      for (let i = 0; i < n; i++) {
+        const side = i % 2 === 0 ? plan.dir : -plan.dir;
+        const off = side * (state.w / 2 + 34 + i * 18);
+        plan.spots.push(Math.max(arena.left + 8, Math.min(arena.right - 22, cx + off)));
+      }
+      plan.groundY = arena.groundY;
+    }
+    return plan;
+  }
+
+  function startTelegraph(state, ctx) {
+    const id = pickAttack(state, ctx);
     const def = state.schema.attacks[id];
-    state.current = { id, def };
+    const plan = planAttack(state, def, ctx);
+    state.current = { id, def, plan };
     state.lastAttack = id;
     state.mode = 'telegraph';
     state.timer = def.telegraph;
-    state.facing = -1;
-    if (def.kind === 'charge') state.facing = state.lastPlayerX !== undefined && state.lastPlayerX > state.x ? 1 : -1;
+    state.facing = plan.dir;
     state.attackCount++;
     state.vulnerable = false;
+    state.stunned = false;
     return [{
       type: 'bossTelegraph', attack: id, kind: def.kind,
       duration: def.telegraph, x: state.x + state.w / 2, y: state.y + state.h / 2,
@@ -74,6 +129,8 @@
   function spawnAttack(state, ctx) {
     const def = state.current.def;
     const id = state.current.id;
+    if (!state.current.plan) state.current.plan = planAttack(state, def, ctx);
+    const plan = state.current.plan;
     const events = [{
       type: 'bossAttack', attack: id, kind: def.kind,
       x: state.x + state.w / 2, y: state.y + state.h / 2, damage: def.damage,
@@ -83,6 +140,7 @@
     const cx = state.x + state.w / 2, cy = state.y + state.h / 2;
     state.mode = 'attack';
     state.timer = def.active;
+    state.facing = plan.dir;
     if (def.kind === 'slam') {
       events.push({
         type: 'bossSlam', x: cx, y: state.y + state.h, radius: def.radius || 90, damage: def.damage,
@@ -102,11 +160,7 @@
       events.push({ type: 'bossFan', x: cx, y: cy, count: n });
     } else if (def.kind === 'falling_hazard') {
       const arena = (ctx && ctx.arena) || { left: 0, right: 640, top: 0, groundY: 400 };
-      const n = def.count || 1;
-      const center = px;
-      for (let i = 0; i < n; i++) {
-        const hx = center + (i - (n - 1) / 2) * (def.spreadX || 50);
-        const x = Math.max(arena.left + 10, Math.min(arena.right - 28, hx - 9));
+      for (const x of plan.targets) {
         state.hazards.push({
           x, y: arena.top + 6, w: 18, h: 18, vy: def.fallSpeed || 200,
           damage: def.damage, targetY: arena.groundY - 18, kind: 'rock',
@@ -114,24 +168,31 @@
         events.push({ type: 'bossHazardSpawn', x: x + 9, y: arena.top + 6, targetY: arena.groundY, damage: def.damage });
       }
     } else if (def.kind === 'charge') {
-      state.facing = px >= cx ? 1 : -1;
-      events.push({ type: 'bossCharge', x: cx, y: cy, facing: state.facing, damage: def.damage });
+      // Durasi serang mengikuti jarak sebenarnya, jadi berhenti tepat di ujung garis peringatan.
+      state.timer = Math.max(0.05, Math.abs(plan.targetX - state.x) / (def.speed || 180));
+      events.push({ type: 'bossCharge', x: cx, y: cy, facing: plan.dir, damage: def.damage });
     } else if (def.kind === 'ground_wave') {
-      // Gelombang rendah menyusur lantai: harus dilompati, bukan diblok.
       const arena = (ctx && ctx.arena) || { left: 0, right: 640, top: 0, groundY: 400 };
-      const dir = px >= cx ? 1 : -1;
       const h = def.height || 10;
       state.projectiles.push({
         x: cx - 7, y: arena.groundY - h, w: 14, h,
-        vx: dir * (def.speed || 130), vy: 0, gravity: 0,
+        vx: plan.dir * (def.speed || 130), vy: 0, gravity: 0,
         life: def.life || 2.4, damage: def.damage, kind: 'wave',
       });
-      events.push({ type: 'bossWave', x: cx, y: arena.groundY, facing: dir, damage: def.damage });
+      events.push({ type: 'bossWave', x: cx, y: arena.groundY, facing: plan.dir, damage: def.damage });
+    } else if (def.kind === 'floor_burst') {
+      state.zones = plan.zones.map((z) => Object.assign({}, z));
+      events.push({ type: 'bossBurst', count: state.zones.length, damage: def.damage });
+    } else if (def.kind === 'summon') {
+      events.push({
+        type: 'bossSummon', spots: plan.spots, y: plan.groundY, dir: plan.dir,
+        hp: def.minionHp || 12, damage: def.damage,
+      });
     }
     return events;
   }
 
-  function updateProjectiles(state, dt, events) {
+  function updateProjectiles(state, dt) {
     const arena = state.arena || { left: -1e9, right: 1e9, top: -1e9, groundY: 1e9 };
     for (const p of state.projectiles) {
       p.x += p.vx * dt; p.y += p.vy * dt; p.vy += p.gravity * dt; p.life -= dt;
@@ -152,6 +213,19 @@
     state.hazards = keep;
   }
 
+  function startRecovery(state, events) {
+    const ph = phaseOf(state);
+    const def = state.current.def;
+    const hitWall = def.kind === 'charge' && state.current.plan && state.current.plan.hitsWall;
+    state.mode = 'recovery';
+    state.timer = (hitWall && def.wallStun ? def.wallStun : (def.recovery || 0.8)) * (ph.recoveryMul || 1);
+    state.vulnerable = def.opens !== false;
+    state.stunned = !!hitWall;
+    state.zones = [];
+    if (hitWall) events.push({ type: 'bossStun', x: state.x + state.w / 2, y: state.y + state.h / 2, duration: state.timer });
+    events.push({ type: 'bossRecovery', attack: state.current.id, duration: state.timer, open: state.vulnerable });
+  }
+
   function update(state, dt, ctx) {
     ctx = ctx || {};
     const events = [];
@@ -164,33 +238,26 @@
 
     if (state.mode === 'idle') {
       state.timer -= dt;
-      if (state.timer <= 0) events.push(...startTelegraph(state));
+      if (state.timer <= 0) events.push(...startTelegraph(state, ctx));
     } else if (state.mode === 'telegraph') {
       state.timer -= dt;
       if (state.timer <= 0) events.push(...spawnAttack(state, ctx));
     } else if (state.mode === 'attack') {
       const def = state.current.def;
       if (def.kind === 'charge') {
-        const arena = state.arena || {};
-        const next = state.x + state.facing * (def.speed || 180) * dt;
-        const lo = arena.left === undefined ? next : arena.left;
-        const hi = arena.right === undefined ? next : arena.right - state.w;
-        state.x = Math.max(lo, Math.min(hi, next));
+        const plan = state.current.plan;
+        const next = state.x + plan.dir * (def.speed || 180) * dt;
+        state.x = plan.dir > 0 ? Math.min(plan.targetX, next) : Math.max(plan.targetX, next);
       }
       state.timer -= dt;
-      if (state.timer <= 0) {
-        const ph = phaseOf(state);
-        state.mode = 'recovery';
-        state.timer = (state.current.def.recovery || 0.8) * (ph.recoveryMul || 1);
-        state.vulnerable = true;
-        events.push({ type: 'bossRecovery', attack: state.current.id, duration: state.timer });
-      }
+      if (state.timer <= 0) startRecovery(state, events);
     } else if (state.mode === 'recovery') {
       state.timer -= dt;
       if (state.timer <= 0) {
         state.mode = 'idle';
         state.timer = 0.55;
         state.vulnerable = false;
+        state.stunned = false;
         state.current = null;
       }
     } else if (state.mode === 'transition') {
@@ -203,39 +270,80 @@
       }
     }
 
-    updateProjectiles(state, dt, events);
+    updateProjectiles(state, dt);
     updateHazards(state, dt, events);
     return events;
   }
 
+  // Kotak weak point di dunia, atau null bila boss ini tidak punya.
+  function weakBox(state) {
+    const wp = state.schema.weakPoint;
+    if (!wp) return null;
+    return { x: state.x + wp.ox, y: state.y + wp.oy, w: wp.w, h: wp.h };
+  }
+
+  function overlaps(a, b) {
+    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  }
+
+  // opts.box = kotak serangan. Tanpa box dianggap mengenai badan dan weak point.
+  // Di luar celah hanya sedikit damage, jadi memukul terus tidak mengalahkan boss.
   function damage(state, amount, opts) {
     opts = opts || {};
     const events = [];
     if (state.defeated || state.mode === 'transition' || state.invuln > 0) return events;
-    const mul = state.vulnerable ? 1.6 : (opts.multiplier === undefined ? 0.8 : opts.multiplier);
+    const schema = state.schema;
+    const guard = schema.guardMul === undefined ? GUARD_MUL : schema.guardMul;
+    const wb = weakBox(state);
+    let weak = false, mul = guard;
+    if (state.vulnerable) {
+      if (wb) {
+        weak = !opts.box || overlaps(opts.box, wb);
+        if (weak) mul = schema.weakPoint.mul || WEAK_MUL;
+      } else {
+        mul = schema.openMul || OPEN_MUL;
+      }
+    }
+    if (opts.multiplier !== undefined) mul = opts.multiplier;
     const dealt = Math.max(1, Math.round(amount * mul));
     state.hp = Math.max(0, state.hp - dealt);
     events.push({
       type: 'bossDamage', amount: dealt, x: state.x + state.w / 2,
-      y: state.y + state.h * 0.45, vulnerable: state.vulnerable,
+      y: state.y + state.h * 0.45, vulnerable: state.vulnerable, weak,
+      guarded: mul === guard && opts.multiplier === undefined,
     });
     if (state.hp <= 0) {
       state.hp = 0; state.defeated = true; state.mode = 'defeated';
-      state.projectiles = []; state.hazards = []; state.vulnerable = false;
+      state.projectiles = []; state.hazards = []; state.zones = []; state.vulnerable = false;
       events.push({ type: 'bossDefeated', x: state.x + state.w / 2, y: state.y + state.h / 2 });
       return events;
     }
-    const next = state.schema.phases[state.phaseIndex + 1];
+    const next = schema.phases[state.phaseIndex + 1];
     if (next && state.hp / state.maxHp <= next.hpFrom) {
       state.phaseIndex++;
       state.mode = 'transition';
       state.timer = next.transitionTime || 1;
       state.invuln = state.timer;
-      state.projectiles = []; state.hazards = [];
+      state.projectiles = []; state.hazards = []; state.zones = [];
       state.vulnerable = false;
+      state.current = null;
       events.push({ type: 'bossPhase', id: next.id, duration: state.timer });
     }
     return events;
+  }
+
+  // Ulang encounter dari awal fase berjalan: hero tidak kehilangan fase yang sudah lewat,
+  // tetapi HP fase ini pulih dan semua serangan yang tertinggal dibersihkan.
+  function reset(state, opts) {
+    opts = opts || {};
+    const ph = phaseOf(state);
+    state.hp = Math.round(state.maxHp * ph.hpFrom);
+    state.x = state.spawnX; state.y = state.spawnY;
+    state.mode = 'idle';
+    state.timer = opts.intro === undefined ? 1.6 : opts.intro;
+    state.current = null; state.vulnerable = false; state.stunned = false; state.invuln = 0;
+    state.projectiles = []; state.hazards = []; state.zones = [];
+    return state;
   }
 
   function validate(schema) {
@@ -246,5 +354,5 @@
     return S ? S.validate(schema) : [];
   }
 
-  return { create, update, damage, validate, rng };
+  return { create, update, damage, reset, weakBox, validate, rng };
 });

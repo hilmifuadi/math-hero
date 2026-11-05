@@ -6,15 +6,16 @@
       require('../../../shared/levelgen/core.js'),
       require('./rules.js'),
       require('../boss/bosses/penjaga.js'),
-      require('../boss/bosses/raja-bandit.js')
+      require('../boss/bosses/raja-bandit.js'),
+      require('../boss/gen.js')
     );
   } else {
     (root.MH4 = root.MH4 || {}).levels = factory(
       root.MHKit.levelgenCore, root.MH4.levelgenRules,
-      root.MH4.bosses.penjaga, root.MH4.bosses.raja
+      root.MH4.bosses.penjaga, root.MH4.bosses.raja, root.MH4.bossGen
     );
   }
-})(typeof self !== 'undefined' ? self : this, function (Core, Rules, Penjaga, Raja) {
+})(typeof self !== 'undefined' ? self : this, function (Core, Rules, Penjaga, Raja, BossGen) {
   const Gen = Core.create(Rules);
 
   const PLAN = [
@@ -78,6 +79,8 @@
     });
     const level = {
       id: p.id, nama: p.nama, tema: p.tema, tier: p.tier, seed: def.seed,
+      // Kekuatan musuh dan senjata naik halus tiap level, sampai 3 di arena boss.
+      power: Math.round((p.id - 1) * 3 / PLAN.length * 100) / 100,
       map: def.map, inside: def.inside, rooms: def.rooms, checkpoints: def.checkpoints,
     };
     return addEnemies(level, p.tier);
@@ -89,7 +92,8 @@
   // bertahap: tier 1 jalan, tier 2 + pelompat, tier 3 + penembak.
   function addEnemies(def, tier) {
     if (tier < 1) return def;
-    const target = Math.min(4, tier + 1);
+    // Kepadatan mengikuti panjang peta: sekitar satu musuh tiap 40 kolom, di level awal lebih jarang.
+    const target = Math.max(tier + 1, Math.min(10, Math.round(def.map[0].length / (tier >= 2 ? 40 : 70))));
     const pool = tier >= 3 ? ['e', 'a', 'g'] : tier >= 2 ? ['e', 'a'] : ['e'];
     const rows = def.map.map((r) => r.split(''));
     const H = rows.length, W = rows[0].length;
@@ -123,49 +127,50 @@
     return Object.assign({}, def, { map: rows.map((r) => r.join('')) });
   }
 
-  // Arena boss: peta tulis tangan 36x14, tanpa gerbang soal (matematika hanya di
-  // platforming). `B` menandai titik spawn boss; `E` baru aktif setelah boss kalah.
-  function arenaBoss() {
-    const W = 36, H = 14;
-    const rows = Array.from({ length: H }, () => Array(W).fill('.'));
-    for (let c = 0; c < W; c++) rows[H - 1][c] = '#';
-    for (let c = 10; c <= 14; c++) rows[7][c] = '=';
-    for (let c = 26; c <= 30; c++) rows[7][c] = '=';
-    rows[12][2] = 'S';
-    rows[12][25] = 'B';
-    rows[12][34] = 'E';
+  // Arena boss: 27x15 tile supaya seluruhnya terlihat pada zoom 1.5 (scene.js). Lantai di
+  // baris 10, jadi hero dan serangan selalu di atas tombol sentuh. Tanpa gerbang soal
+  // (matematika hanya di platforming). `B` spawn boss; `E` aktif setelah boss kalah.
+  const ARENA_W = 27, ARENA_H = 15, ARENA_FLOOR = 10;
+
+  function makeArena(platforms) {
+    const rows = Array.from({ length: ARENA_H }, () => Array(ARENA_W).fill('.'));
+    for (let r = ARENA_FLOOR; r < ARENA_H; r++) for (let c = 0; c < ARENA_W; c++) rows[r][c] = '#';
+    for (const [r, from, to] of platforms) for (let c = from; c <= to; c++) rows[r][c] = '=';
+    rows[ARENA_FLOOR - 1][2] = 'S';
+    rows[ARENA_FLOOR - 1][19] = 'B';
+    rows[ARENA_FLOOR - 1][25] = 'E';
     return rows.map((r) => r.join(''));
   }
 
-  // Arena boss kedua: panggung benteng dengan dua undakan rendah supaya
-  // gelombang tanah tetap bisa dilompati tanpa terjebak di sudut.
-  function arenaBossRaja() {
-    const W = 36, H = 14;
-    const rows = Array.from({ length: H }, () => Array(W).fill('.'));
-    for (let c = 0; c < W; c++) rows[H - 1][c] = '#';
-    for (let c = 6; c <= 10; c++) rows[8][c] = '=';
-    for (let c = 16; c <= 20; c++) rows[6][c] = '=';
-    for (let c = 27; c <= 31; c++) rows[8][c] = '=';
-    rows[12][2] = 'S';
-    rows[12][25] = 'B';
-    rows[12][34] = 'E';
-    return rows.map((r) => r.join(''));
-  }
+  // Dua platform lompat ganda sebagai tempat aman dari slam dan semburan lantai.
+  const arenaBoss = () => makeArena([[6, 5, 9], [6, 17, 21]]);
+  // Tengah dikosongkan supaya serudukan tampak jelas; platform dekat kedua dinding.
+  const arenaBossRaja = () => makeArena([[6, 2, 6], [6, 20, 24]]);
 
   const BOSS = {
-    id: 15, boss: true, nama: 'Penjaga Mesin', tema: 'industrial', tier: 3, seed: 9901,
+    id: 15, boss: true, nama: 'Hantu Kabut', tema: 'green', tier: 3, power: 1.2, seed: 9901,
     map: arenaBoss(), inside: [], rooms: [], checkpoints: 0,
     bossDef: Penjaga,
   };
 
   const BOSS2 = {
-    id: 16, boss: true, nama: 'Raja Bandit', tema: 'castle', tier: 3, seed: 9902,
+    id: 16, boss: true, nama: 'Raja Iblis', tema: 'castle', tier: 3, seed: 9902,
     map: arenaBossRaja(), inside: [], rooms: [], checkpoints: 0,
     bossDef: Raja,
   };
 
   const BOSSES = [BOSS, BOSS2];
-  const ALL = LEVELS.concat(BOSSES);
+
+  // Boss hasil generator: seed menentukan mekanisme, skin, tema arena, dan pola serangan.
+  function genBoss(seed, difficulty) {
+    const bossDef = BossGen.build({ seed, difficulty: difficulty || 2 });
+    return {
+      id: 17, boss: true, gen: true, nama: bossDef.nama, tema: bossDef.arenaTheme, tier: 3,
+      seed: bossDef.seed, map: arenaBoss(), inside: [], rooms: [], checkpoints: 0, bossDef,
+    };
+  }
+
+  const ALL = LEVELS.concat(BOSSES, [genBoss(9903)]);
 
   function validateBoss(def) {
     const bad = [];
@@ -182,7 +187,7 @@
   }
 
   return {
-    PLAN, LEVELS, BOSS, BOSS2, BOSSES, ALL,
+    PLAN, LEVELS, BOSS, BOSS2, BOSSES, ALL, genBoss,
     level: (id) => LEVELS.find((l) => l.id === id) || LEVELS[0],
     validate, validateBoss, generate: Gen.generate,
   };

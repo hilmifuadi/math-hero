@@ -30,8 +30,13 @@ service cloud.firestore {
       allow list: if false;
       allow delete: if false;
       allow create, update: if
-        request.resource.data.keys().hasOnly(['uid', 'v', 'nama', 'koin', 'owned', 'equipped', 'best', 'totalStars', 'updatedAt'])
-        && request.resource.data.keys().hasAll(['uid', 'v', 'nama', 'koin', 'owned', 'equipped', 'best', 'totalStars', 'updatedAt'])
+        request.resource.data.keys().hasOnly(['uid', 'v', 'nama', 'koin', 'owned', 'equipped', 'best', 'totalStars', 'points', 'stats', 'weapons', 'gear', 'base', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['uid', 'v', 'nama', 'koin', 'owned', 'equipped', 'best', 'totalStars', 'points', 'stats', 'weapons', 'gear', 'base', 'updatedAt'])
+        && request.resource.data.base is map
+        && request.resource.data.points is int
+        && request.resource.data.stats is map
+        && request.resource.data.weapons is list && request.resource.data.weapons.size() <= 20
+        && request.resource.data.gear is map
         && request.resource.data.uid == uid
         && uid.matches('^[a-z0-9]{8,32}$')
         && request.resource.data.v is int

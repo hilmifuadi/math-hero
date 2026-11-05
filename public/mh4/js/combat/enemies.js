@@ -7,22 +7,22 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   const TYPES = {
     walker: {
-      id: 'walker', nama: 'Bandit', char: 'e', behavior: 'walk',
-      hp: 20, damage: 10, speed: 26, w: 14, h: 15,
-      sprite: { w: 28, h: 28, frame: 48 },
+      id: 'walker', nama: 'Tengkorak', char: 'e', behavior: 'walk',
+      hp: 20, damage: 10, speed: 26, w: 14, h: 22,
+      sprite: { frame: 32, draw: 48, foot: 23 },
     },
     jumper: {
-      id: 'jumper', nama: 'Ninja', char: 'a', behavior: 'jump',
-      hp: 16, damage: 10, speed: 22, w: 14, h: 15,
+      id: 'jumper', nama: 'Lendir', char: 'a', behavior: 'jump',
+      hp: 16, damage: 10, speed: 22, w: 18, h: 15,
       jump: 235, jumpEvery: 1.35, hopRange: 70,
-      sprite: { w: 28, h: 28, frame: 48 },
+      sprite: { frame: 64, draw: 96, foot: 40 },
     },
     shooter: {
-      id: 'shooter', nama: 'Penembak', char: 'g', behavior: 'shoot',
-      hp: 24, damage: 8, speed: 14, w: 14, h: 15,
+      id: 'shooter', nama: 'Penyihir Tulang', char: 'g', behavior: 'shoot',
+      hp: 24, damage: 8, speed: 14, w: 14, h: 22,
       sight: 112, fireEvery: 2.0, telegraph: 0.35,
       bullet: { w: 8, h: 4, speed: 105, life: 2.4 },
-      sprite: { w: 28, h: 28, frame: 48 },
+      sprite: { frame: 32, draw: 48, foot: 23 },
     },
   };
 

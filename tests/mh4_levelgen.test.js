@@ -47,8 +47,8 @@ ok('semua level lulus invariant', () => {
 
 ok('arena boss lolos validasi dan memakai tema terdaftar', () => {
   assert.deepStrictEqual(L.validateBoss(L.BOSS), []);
-  assert.strictEqual(L.BOSS.map.length, 14);
-  for (const row of L.BOSS.map) assert.strictEqual(row.length, 36);
+  assert.strictEqual(L.BOSS.map.length, 15);
+  for (const row of L.BOSS.map) assert.strictEqual(row.length, 27);
   assert.ok(L.BOSS.bossDef && L.BOSS.bossDef.id, 'bossDef terpasang');
   assert.strictEqual(L.BOSS.bossDef.id, 'penjaga-mesin');
   assert.ok(Themes.THEMES[L.BOSS.tema], 'tema boss terdaftar');
@@ -184,6 +184,7 @@ ok('jalur UMD browser menghasilkan peta yang sama', () => {
     'public/mh4/js/boss/schema.js',
     'public/mh4/js/boss/bosses/penjaga.js',
     'public/mh4/js/boss/machine.js',
+    'public/mh4/js/boss/gen.js',
     'public/mh4/js/gen/chunks.js',
     'public/mh4/js/gen/rules.js',
     'public/mh4/js/gen/levels.js',

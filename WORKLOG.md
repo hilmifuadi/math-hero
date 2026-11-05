@@ -100,6 +100,85 @@ Lalu hapus baris entri itu dari tabel "Klaim aktif".
 
 ## 5. Riwayat
 
+### WL-016 — Paket 4: markas top down, cerita, dan visual baru
+- **Agen:** claude-opus
+- **Status:** RESOLVED
+- **Area/klaim:** `public/mh4/`, `public/assets/mh4/v2/`, `scripts/prepare_assets_mh4.js`,
+  `scripts/pngtool.js`, `tests/mh4_base.test.js`, `tests/mh4_smoke.test.js`, `tests/mh4_layout_ui.js`,
+  `tests/mh4_progress.test.js`, `tests/mh4_boss.test.js`, `package.json`, `docs/firestore.rules`
+- **Ringkasan:** Mode markas Kampung Lumbung (peta, rumah, warga, ladang, papan misi), cerita
+  "Bayu dan Kabut Kacau" dengan rute misi per bab, hero Bayu di kedua mode, musuh dan boss baru,
+  UI papan kayu, parallax, tanah tidak lagi bergaris, dekorasi dipudarkan. Musuh aktif saat hero
+  dekat, berbalik di tepi jurang, dan lebih padat. Soal berubah tiap hari, tombol 1 sampai 4 di laptop.
+- **Tes:** `npm run test:mh4`, `npm run test:snapshot`, tampilan browser 844x390.
+- **Mulai:** 2026-11-05 18:45 +07:00
+- **Update terakhir:** 2026-11-05 19:30 +07:00
+- **Resolved:** 2026-11-05 19:30 +07:00
+- **Catatan:** Entri ditulis setelah kode diubah. Belum di-commit. Aset lama `boss/penjaga`, `boss/raja`,
+  `enemies`, dan `hero` tidak lagi dipakai game; belum dihapus. Mekanik platforming baru belum dibuat.
+- **Linimasa:**
+  - 19:30 — claude-opus — RESOLVED: perintah pengguna untuk paket 4.
+  - 19:35 — claude-opus — CATATAN: atas perintah pengguna, turunan Cute Fantasy dan Mystic Woods masuk
+    `.gitignore`, README menjelaskan cara mengunduh, dan skrip aset melewati paket yang tidak ada.
+  - 19:40 — claude-opus — CATATAN: pengguna membatalkan `.gitignore` itu; semua aset v2 tetap di repo.
+    Paket tanpa berkas lisensi dianggap bebas dipakai atas keputusan pengguna.
+
+### WL-015 — Paket 3: progresi, senjata, dan kurva kesulitan
+- **Agen:** claude-opus
+- **Status:** RESOLVED
+- **Area/klaim:** `public/mh4/js/combat/weapons.js`, `public/mh4/js/{sim,scene,main,progress,shop}.js`,
+  `public/mh4/js/gen/levels.js`, `public/mh4/index.html`, `docs/firestore.rules`,
+  `tests/mh4_combat.test.js`, `tests/mh4_progress.test.js`, `public/mh4/README.md`, `AGENTS.md`
+- **Ringkasan:**
+  - Senjata baru Tombak, Palu, Pelontar (meledak), dan Pemantul, didapat dari peti level 2, 4, 7,
+    dan 10. Hanya damage yang naik mengikuti level.
+  - Upgrade point Health, Attack, Speed: satu poin tiap level baru, dua untuk boss, maksimal 6
+    tingkat. Simpanan lama mendapat poin dari level yang sudah selesai.
+  - `power` per level menggantikan tier 3 yang datar. HP dan serangan boss ikut sebagian kekuatan
+    hero. Item toko kini umum per jenis senjata; `Pendingin` hanya untuk senjata jauh.
+- **Tes:**
+  - `npm run test:mh4` → **95 tes lulus** (16 combat, 16 progresi, 25 boss).
+  - `npm run test:snapshot` → 8 hash MH3 sama.
+  - Browser 844x390: kartu senjata baru, panel upgrade, dan efek langsung ke game; console tanpa error.
+  - Belum diuji: keseimbangan lewat permainan nyata, HP sungguhan, audio, `npm test` penuh.
+- **Mulai:** 2026-11-05 18:27 +07:00
+- **Update terakhir:** 2026-11-05 19:00 +07:00
+- **Resolved:** 2026-11-05 19:00 +07:00
+- **Catatan:** Entri ini baru ditulis setelah kode diubah; seharusnya sebelum mulai. Aturan
+  Firestore berubah dan belum dipublikasikan. Belum di-commit, menunggu izin pengguna.
+- **Linimasa:**
+  - 19:00 — claude-opus — RESOLVED: perintah pengguna "lanjut paket berikutnya".
+
+### WL-014 — Paket 2: boss seru dan adil
+- **Agen:** claude-opus
+- **Status:** RESOLVED
+- **Area/klaim:** `public/mh4/js/boss/`, `public/mh4/js/sim.js`, `public/mh4/js/scene.js`,
+  `public/mh4/js/main.js`, `public/mh4/js/gen/levels.js`, `public/mh4/index.html`,
+  `tests/mh4_boss.test.js`, `tests/mh4_levelgen.test.js`, `public/mh4/README.md`, `AGENTS.md`
+- **Ringkasan:**
+  - Kalah di arena mengulang encounter dari awal fase berjalan dan membersihkan semua serangan;
+    setelah dua kali kalah damage ke hero 0,75x. Damage di luar celah 0,25x.
+  - Sasaran serangan dikunci saat telegraph (`current.plan`), tiap jenis serangan punya tanda
+    sendiri, dan damage/jarak charge mengikuti data. Slam tidak mengenai hero di platform.
+  - Arena 27x15 dengan zoom 1,5: hero dan boss sebingkai, lantai di atas tombol sentuh.
+  - Primitif baru `floor_burst` dan `summon`, weak point, tabrak dinding, `BossMachine.reset`.
+  - Penjaga Mesin kini berciri kristal, Raja Bandit berciri serudukan ke dinding dan anak buah.
+  - `boss/gen.js` merakit boss dari seed; level 17 `ACAK` memakai seed baru tiap main.
+- **Tes:**
+  - `npm run test:mh4` → **83 tes lulus** (25 boss, termasuk 200 seed BossGen x 3 kesulitan).
+  - `npm run test:snapshot` → 8 hash MH3 sama.
+  - Browser 844x390: tanda slam, semburan, batu, charge, celah kristal, dan pusing tampil; console
+    tanpa error. Langkah waktu lewat `MH4.debug.step` karena panel tersembunyi.
+  - Belum diuji: keseimbangan lewat permainan nyata, HP sungguhan, bunyi audio, `npm test` penuh.
+- **Mulai:** 2026-11-05 15:40 +07:00
+- **Update terakhir:** 2026-11-05 16:20 +07:00
+- **Resolved:** 2026-11-05 16:20 +07:00
+- **Catatan:** Perintah pengguna "lanjut paket perbaikan 2". Isi `audio.js` tidak diubah. Belum
+  di-commit, menunggu izin pengguna.
+- **Linimasa:**
+  - 15:40 — claude-opus — CLAIMED: mulai dari aturan kalah dan telegraph.
+  - 16:20 — claude-opus — RESOLVED: tes MH4, snapshot, dan tampilan browser lulus.
+
 ### WL-013 — Paket 1: game bisa dimainkan (beku saat lompat, tata letak HP)
 - **Agen:** claude-opus
 - **Status:** RESOLVED

@@ -123,4 +123,101 @@ ok('cooldown mencegah spam serangan', () => {
   assert.ok(g.enemies[0].hp < hp1, 'setelah cooldown serangan jalan lagi');
 });
 
+const withGear = (map, gear) => Sim.create({ map }, { loadout: gear });
+
+ok('tiap senjata punya identitas dan hanya damage yang ikut level', () => {
+  for (const id of [...Weapons.MELEE, ...Weapons.RANGED]) assert.ok(Weapons.get(id).desc, id + ' punya deskripsi');
+  const meleeMin = Math.min(...Weapons.MELEE.map((id) => Weapons.get(id).damage));
+  const rangedMax = Math.max(...Weapons.RANGED.map((id) => Weapons.get(id).damage));
+  assert.ok(rangedMax < meleeMin, 'jarak jauh selalu lebih lemah per serangan');
+  const sig = (id) => { const w = Weapons.get(id); return [w.range, w.height, w.cooldown, w.knockback, w.gravity, w.bounce, w.blast].join(); };
+  assert.strictEqual(new Set([...Weapons.MELEE, ...Weapons.RANGED].map(sig)).size, 6, 'semua berbeda');
+  assert.ok(Weapons.damageFor(Weapons.get('palu'), 3) > Weapons.get('palu').damage);
+});
+
+ok('tombak mengenai musuh jauh yang tidak terjangkau pedang', () => {
+  const FAR3 = ['....................', '....................', '....................', '....................', 'S..e..............E.', '####################'];
+  const g1 = withGear(FAR3, { melee: 'pedang' });
+  const g2 = withGear(FAR3, { melee: 'tombak' });
+  for (const g of [g1, g2]) { g.enemies[0].x = g.p.x + g.p.w + 40; }
+  tap(g1, 'attack'); tap(g2, 'attack');
+  assert.strictEqual(g1.enemies[0].hp, g1.enemies[0].maxHp, 'pedang tidak sampai');
+  assert.ok(g2.enemies[0].hp < g2.enemies[0].maxHp, 'tombak sampai');
+});
+
+ok('palu mendorong lebih jauh dan cooldown lebih lama', () => {
+  const g1 = withGear(NEAR, { melee: 'pedang' });
+  const g2 = withGear(NEAR, { melee: 'palu' });
+  for (const g of [g1, g2]) g.enemies[0].hp = g.enemies[0].maxHp = 500;
+  tap(g1, 'attack'); tap(g2, 'attack');
+  assert.ok(Math.abs(g2.enemies[0].kx) > Math.abs(g1.enemies[0].kx), 'knockback lebih besar');
+  assert.ok(g2.cooldown > g1.cooldown, 'cooldown lebih lama');
+});
+
+ok('pelontar melengkung dan meledak mengenai area', () => {
+  const WIDE = ['....................', '....................', '....................', '....................', 'S..................E', '####################'];
+  const g = withGear(WIDE, { ranged: 'pelontar' });
+  tap(g, 'switch');
+  assert.strictEqual(g.weapon, 'pelontar');
+  tap(g, 'attack');
+  assert.ok(g.shots[0].vy < -100, 'dilempar ke atas');
+  frames(g, 150);
+  assert.strictEqual(g.shots.length, 0, 'bom habis');
+  assert.ok(Sim.takeEvents(g).some((e) => e.type === 'blast'), 'meledak saat menyentuh tanah');
+});
+
+ok('pemantul berbalik di dinding sesuai jumlah pantulan', () => {
+  const g = withGear(['........#', 'S......E#', '#########'], { ranged: 'pantul' });
+  tap(g, 'switch');
+  tap(g, 'attack');
+  const s = g.shots[0];
+  assert.strictEqual(s.bounce, 2);
+  let flipped = false;
+  for (let i = 0; i < 60 && g.shots.length; i++) { tick(g); if (s.vx < 0) flipped = true; }
+  assert.ok(flipped && s.bounce < 2, 'peluru memantul');
+});
+
+ok('Pendingin hanya mempercepat senjata jauh', () => {
+  const lo = { rangedCooldownMul: 0.5 };
+  const g = withGear(NEAR, lo);
+  tap(g, 'attack');
+  assert.ok(Math.abs(g.cooldown - Weapons.get('pedang').cooldown) < 0.03, 'pedang tetap');
+  const g2 = withGear(NEAR, lo);
+  tap(g2, 'switch');
+  tap(g2, 'attack');
+  assert.ok(g2.cooldown < Weapons.get('blaster').cooldown * 0.6, 'blaster lebih cepat');
+});
+
+ok('kekuatan musuh dan senjata naik halus per level dan tetap seimbang', () => {
+  const L = require('../public/mh4/js/gen/levels.js');
+  const Enemies = require('../public/mh4/js/combat/enemies.js');
+  const powers = L.LEVELS.map((l) => l.power);
+  for (let i = 1; i < powers.length; i++) assert.ok(powers[i] > powers[i - 1], 'naik tiap level');
+  assert.ok(powers[powers.length - 1] <= 3, 'tidak melewati arena boss');
+  const pedang = Weapons.get('pedang');
+  for (const lv of L.LEVELS) {
+    const hits = Damage.scale(Enemies.get('walker').hp, lv.power) / Weapons.damageFor(pedang, lv.power);
+    assert.ok(hits <= 2, `L${lv.id}: bandit maksimal dua tebasan tanpa upgrade`);
+    const g = Sim.create(lv);
+    for (const e of g.enemies) assert.ok(e.damage < g.maxHp / 2, `L${lv.id}: tidak mati dua kali kena`);
+  }
+});
+
+ok('HP dan serangan boss ikut sebagian kekuatan hero', () => {
+  const L = require('../public/mh4/js/gen/levels.js');
+  const base = Sim.create(L.BOSS);
+  const strong = Sim.create(L.BOSS, { loadout: { meleeMul: 2, maxHp: 30 } });
+  assert.strictEqual(base.boss.maxHp, L.BOSS.bossDef.maxHp);
+  assert.strictEqual(strong.boss.maxHp, Math.round(L.BOSS.bossDef.maxHp * 1.5));
+  assert.strictEqual(strong.boss.hp, strong.boss.maxHp);
+  strong.invuln = 0;
+  Sim.hurt(strong, 'boss', 10);
+  assert.strictEqual(strong.hp, 60 - 15, 'hero 2x HP: serangan 1,5x');
+  strong.boss.hp = 1;
+  strong.hp = 1; strong.invuln = 0;
+  strong.boss.phaseIndex = 0;
+  Sim.hurt(strong, 'boss', 10);
+  assert.strictEqual(strong.boss.hp, strong.boss.maxHp, 'reset memakai HP maksimal boss ini');
+});
+
 console.log(`\n${n} tes combat MH4 lulus.`);

@@ -3,19 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Math Hero 4 — Petualangan Delapan Zona</title>
+<title>Math Hero 4: Bayu dan Kabut Kacau</title>
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #08120d; overflow: hidden; }
   body { display: flex; align-items: center; justify-content: center; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: #eaf6ee; }
   /* --u = 1/640 lebar kanvas. Teks kartu memakai em dari #wrap supaya ikut membesar di laptop. */
+  @font-face { font-family: 'Pixelzone'; src: url('../assets/pixelzone-font/Pixelzone-E4MV4.ttf'); font-display: swap; }
+  #wrap.basemode #attack, #wrap.basemode #swap { display: none; }
   #wrap { --u: calc(min(100vw, 177.78vh) / 640); position: relative; width: min(100vw, 177.78vh); aspect-ratio: 16 / 9; background: #0d1b13; border-radius: 10px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.55); font-size: clamp(14px, calc(var(--u) * 9), 26px); }
   canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; image-rendering: crisp-edges; }
   #menubtn { position: absolute; top: calc(var(--u) * 42); right: calc(var(--u) * 10); z-index: 8; min-width: 44px; min-height: 44px; border: 1px solid rgba(255,255,255,.35); background: rgba(8,20,14,.72); color: #fff; border-radius: 10px; padding: .3em .7em; font-size: 1em; font-weight: 800; cursor: pointer; }
   .chips { display: grid; grid-template-columns: repeat(8, 1fr); gap: .4em; }
   .chip { min-height: 44px; border: 1px solid rgba(255,255,255,.18); background: rgba(8,20,14,.72); color: #d9f3e2; border-radius: 8px; padding: .3em .4em; font-size: .95em; font-weight: 700; cursor: pointer; }
-  .chip.boss { grid-column: span 4; }
+  .chip.boss { grid-column: span 2; }
   .chip.on { background: #2f8f4e; border-color: #7be0a0; color: #fff; }
   .chip:disabled { opacity: .38; cursor: not-allowed; }
   .menuhead { display: flex; justify-content: space-between; align-items: center; gap: .6em; }
@@ -36,12 +38,48 @@
   #jump { width: 78px; height: 78px; background: rgba(46,140,86,.55); }
   .btn.atk { background: rgba(150,80,40,.55); }
   .btn.swp { background: rgba(40,90,150,.55); font-size: 22px; }
-  #modal, #win, #menu, #rotate { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(4,12,8,.78); z-index: 10; padding: 8px; }
-  #modal.hidden, #win.hidden, #menu.hidden, #rotate.hidden, #shop.hidden { display: none; }
+  #modal, #win, #menu, #rotate, #newweapon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(4,12,8,.78); z-index: 10; padding: 8px; }
+  #title, #board { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(30,18,30,.45); z-index: 10; padding: 8px; }
+  #dialog { position: absolute; inset: auto 0 0 0; z-index: 12; padding: 8px; display: flex; justify-content: center; cursor: pointer; }
+  #modal.hidden, #win.hidden, #menu.hidden, #rotate.hidden, #shop.hidden, #newweapon.hidden, #title.hidden, #board.hidden, #dialog.hidden, .hidden { display: none !important; }
+  .dcard { width: min(40em, 98%); display: flex; gap: .8em; }
+  #dface { flex: 0 0 auto; width: 3.6em; height: 3.6em; background-size: 600% auto; background-position: 0 0; image-rendering: pixelated; }
+  #dname { font-weight: 800; color: #7a3d00; }
+  #dtext { font-size: 1.05em; line-height: 1.35; }
+  #dchoices { display: grid; gap: .35em; margin-top: .5em; }
+  #dchoices .choice { font-size: .95em; text-align: left; }
+  #dnext { font-size: .8em; color: #5a3a1c; text-align: right; }
+  .logo { font-family: 'Pixelzone', system-ui, sans-serif; font-size: 4.2em; color: #4a2208; line-height: 1; }
+  #wrap.titlemode #menubtn { display: none; }
+  .logosub { font-weight: 800; color: #7a3d00; margin: .3em 0 .8em; }
+  .chip.done { border-color: #5f8f2e; background: #6d4a22; }
+  #boardbody h3 { margin: .5em 0 .25em; color: #4a2208; font-size: 1em; }
+  #boardbody .chips { grid-template-columns: repeat(2, 1fr); }
+  #boardbody .chip.boss { grid-column: span 2; background: #6d2a22; }
+  .boardcard { width: min(44em, 97%); }
   #rotate { position: fixed; z-index: 20; background: #08120d; text-align: center; }
   .rotateicon { font-size: 3em; margin-bottom: .2em; }
-  .card { width: min(32em, 94%); max-height: 100%; overflow: auto; background: linear-gradient(180deg, #123021, #0c1f16); border: 1px solid rgba(140,240,180,.28); border-radius: 14px; padding: .9em 1.1em; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
-  .card h2 { margin: 0 0 .3em; font-size: 1.4em; color: #b7ffd2; }
+  /* Papan kayu Medieval UI: sudut besi tetap, tengah kayu meregang. */
+  .card { width: min(32em, 94%); max-height: 100%; overflow: auto; color: #2f1a0b; border-style: solid; border-width: 18px; border-image: url('../assets/mh4/v2/ui/panel.png') 12 fill / 18px stretch; image-rendering: pixelated; padding: .2em .4em; }
+  .card h2 { margin: 0 0 .3em; font-size: 1.4em; color: #4a2208; }
+  .sub { color: #4a2f18 !important; }
+  .chip, .choice, .primary, .ghost, .shopitem button, #menubtn { color: #fff3d6 !important; background: #6d4322 !important; border: 2px solid #3a2112 !important; border-radius: 6px; box-shadow: inset 0 2px 0 rgba(255,220,160,.28); text-shadow: 0 1px 0 rgba(0,0,0,.5); }
+  .primary { background: #3f7d3a !important; }
+  .chip:disabled, .choice:disabled, .shopitem button:disabled { background: #7d6a55 !important; opacity: .65; }
+  .chip.on, .choice:hover { background: #8a5a2b !important; }
+  .choice.wrong { background: #8a2f22 !important; }
+  .shopitem { background: rgba(255,235,190,.42) !important; border-color: #6d4322 !important; }
+  .shopitem.on { background: rgba(170,210,110,.55) !important; border-color: #3f7d3a !important; }
+  .shopitem .nm { color: #2f1a0b !important; }
+  .shopitem .ds { color: #4a2f18 !important; }
+  .shopitem .pr, .shopcoins, #coins, .big { color: #7a3d00 !important; }
+  .shopslot h3, .shophead { color: #4a2208 !important; }
+  .feedback { color: #8a2f22 !important; }
+  .keys { color: #4a2f18 !important; }
+  .btn { background: rgba(58,33,18,.5) !important; border-color: rgba(255,225,170,.6) !important; }
+  #jump { background: rgba(63,125,58,.6) !important; }
+  .btn.atk { background: rgba(138,47,34,.6) !important; }
+  .btn.swp { background: rgba(50,80,130,.6) !important; }
   .card .q { font-size: 1.8em; font-weight: 800; margin: .3em 0 .4em; letter-spacing: .5px; }
   .choices { display: grid; grid-template-columns: 1fr 1fr; gap: .5em; }
   .choice { min-height: 44px; border: 1px solid rgba(255,255,255,.2); border-radius: 10px; padding: .4em; font-size: 1.4em; font-weight: 800; background: #173d2a; color: #fff; cursor: pointer; }
@@ -118,37 +156,63 @@
         <h2>Menu</h2>
         <span id="coins">Koin 0</span>
       </div>
-      <div class="chips">
-        <button class="chip" data-level="1">1</button>
-        <button class="chip" data-level="2">2</button>
-        <button class="chip" data-level="3">3</button>
-        <button class="chip" data-level="4">4</button>
-        <button class="chip" data-level="5">5</button>
-        <button class="chip" data-level="6">6</button>
-        <button class="chip" data-level="7">7</button>
-        <button class="chip" data-level="8">8</button>
-        <button class="chip" data-level="9">9</button>
-        <button class="chip" data-level="10">10</button>
-        <button class="chip" data-level="11">11</button>
-        <button class="chip" data-level="12">12</button>
-        <button class="chip" data-level="13">13</button>
-        <button class="chip" data-level="14">14</button>
-        <button class="chip boss" id="bosschip" data-level="15">BOSS</button>
-        <button class="chip boss" id="bosschip2" data-level="16">BOSS 2</button>
-      </div>
       <div class="menurow">
         <button class="primary" id="menuclose">Lanjut</button>
-        <button class="ghost" id="restart">Ulangi Level</button>
-        <button class="ghost" id="shopbtn">Toko</button>
+        <button class="ghost" id="restart">Ulangi Misi</button>
+        <button class="ghost" id="home">Pulang ke Kampung</button>
+        <button class="ghost" id="shopbtn">Toko &amp; Upgrade</button>
         <button class="ghost" id="sound">Suara</button>
       </div>
-      <div class="keys">Panah atau A/D: gerak. Spasi: lompat. Bawah: turun. J: serang. K: ganti senjata. Esc: menu.</div>
+      <div class="keys">Kampung: panah untuk jalan, Spasi atau E untuk bicara dan berladang. Misi: panah untuk gerak, Spasi untuk lompat, J untuk serang, K untuk ganti senjata. Esc: menu.</div>
+    </div>
+  </div>
+
+  <div id="title" class="hidden">
+    <div class="card" style="text-align:center">
+      <div class="logo">Math Hero 4</div>
+      <div class="logosub">Bayu dan Kabut Kacau</div>
+      <div class="sub" style="margin-bottom:.8em">Rawat ladang, hitung di gerbang, dan rebut kembali Kristal Bilangan.</div>
+      <button class="primary" id="start" style="width:100%">Mulai Petualangan</button>
+    </div>
+  </div>
+
+  <div id="board" class="hidden">
+    <div class="card boardcard">
+      <h2>Papan Misi</h2>
+      <div class="sub" id="boardinfo"></div>
+      <div id="boardbody"></div>
+      <div class="row"><button class="ghost" id="boardclose">Tutup</button></div>
+    </div>
+  </div>
+
+  <div id="dialog" class="hidden">
+    <div class="card dcard">
+      <div id="dface"></div>
+      <div style="flex:1">
+        <div id="dname"></div>
+        <div id="dtext"></div>
+        <div id="dchoices"></div>
+        <div id="dnext">Lanjut &#9654;</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="newweapon" class="hidden">
+    <div class="card">
+      <h2>Senjata baru!</h2>
+      <div class="big" id="nwname" style="font-size:1.9em;letter-spacing:1px"></div>
+      <div id="nwdesc" style="color:#cfe8d9;margin-bottom:.5em"></div>
+      <div class="sub" id="nwswap"></div>
+      <div class="row">
+        <button class="ghost" id="nwkeep">Simpan saja</button>
+        <button class="primary" id="nwuse">Pakai sekarang</button>
+      </div>
     </div>
   </div>
 
   <div id="shop" class="hidden">
     <div class="card shopcard">
-      <h2>Toko &amp; Equipment</h2>
+      <h2>Toko &amp; Upgrade</h2>
       <div class="shophead">
         <span class="shopcoins" id="shopcoins">Koin 0</span>
         <span id="shopstatus">Pilih item untuk dibeli, lalu pasang.</span>
@@ -162,14 +226,14 @@
 
   <div id="win" class="hidden">
     <div class="card">
-      <h2>Level Selesai!</h2>
+      <h2>Misi Selesai!</h2>
       <div class="big" id="winstars">★ 0/0</div>
       <div id="wintext" style="color:#cfe8d9;margin-bottom:.6em"></div>
       <div id="wincoins" style="color:#ffd84a;font-weight:800;margin-bottom:.4em"></div>
       <div class="row">
-        <button class="ghost" id="winshop">Toko</button>
+        <button class="ghost" id="winshop">Toko &amp; Upgrade</button>
         <button class="ghost" id="again">Main Lagi</button>
-        <button class="primary" id="next">Level Berikutnya</button>
+        <button class="primary" id="next">Pulang ke Kampung</button>
       </div>
     </div>
   </div>
@@ -196,11 +260,17 @@
 <script src="js/boss/bosses/penjaga.js"></script>
 <script src="js/boss/bosses/raja-bandit.js"></script>
 <script src="js/boss/machine.js"></script>
+<script src="js/boss/gen.js"></script>
 <script src="js/gen/chunks.js"></script>
 <script src="js/gen/rules.js"></script>
 <script src="js/gen/levels.js"></script>
 <script src="js/theme.js"></script>
 <script src="../js/firebase-config.js"></script>
+<script src="js/base/farm.js"></script>
+<script src="js/base/story.js"></script>
+<script src="js/base/world.js"></script>
+<script src="js/base/sim.js"></script>
+<script src="js/base/scene.js"></script>
 <script src="js/shop.js"></script>
 <script src="js/progress.js"></script>
 <script src="js/cloud.js"></script>

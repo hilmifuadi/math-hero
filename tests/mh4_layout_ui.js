@@ -36,7 +36,8 @@ const cardFits = (sel) => {
     const pg = await (await b.newContext(opts)).newPage();
     pg.on('pageerror', (e) => errs.push(e.message));
     await pg.goto(url);
-    await pg.waitForFunction(() => window.MH4 && MH4.debug && MH4.debug.game);
+    await pg.waitForFunction(() => window.MH4 && MH4.debug);
+    await pg.evaluate(() => MH4.debug.startLevel(0));
     await pg.waitForTimeout(300);
     return pg;
   };

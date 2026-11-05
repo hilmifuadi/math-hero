@@ -5,16 +5,17 @@
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else ((root.MH4 = root.MH4 || {}).shop = factory());
 })(typeof self !== 'undefined' ? self : this, function () {
-  // Efek yang dikenal: meleeMul, rangedMul, maxHp, cooldownMul, speedMul, coinMul.
+  // Efek yang dikenal: meleeMul, rangedMul, maxHp, cooldownMul (semua senjata),
+  // rangedCooldownMul (senjata jauh), speedMul, coinMul.
   const ITEMS = [
-    { id: 'pedang-biasa', slot: 'pedang', nama: 'Pedang Biasa', price: 0, desc: 'Bawaan awal.', effects: {} },
-    { id: 'blaster-biasa', slot: 'blaster', nama: 'Blaster Biasa', price: 0, desc: 'Bawaan awal.', effects: {} },
-    { id: 'mata-baja', slot: 'pedang', nama: 'Mata Baja', price: 90, desc: 'Pedang +20% damage.', effects: { meleeMul: 1.2 } },
-    { id: 'bilah-api', slot: 'pedang', nama: 'Bilah Api', price: 220, desc: 'Pedang +45% damage.', effects: { meleeMul: 1.45 } },
-    { id: 'pedang-kristal', slot: 'pedang', nama: 'Pedang Kristal', price: 380, desc: 'Pedang +70% damage.', effects: { meleeMul: 1.7 } },
-    { id: 'laras-panjang', slot: 'blaster', nama: 'Laras Panjang', price: 100, desc: 'Blaster +20% damage.', effects: { rangedMul: 1.2 } },
-    { id: 'pendingin', slot: 'blaster', nama: 'Pendingin', price: 200, desc: 'Tembakan 20% lebih cepat.', effects: { cooldownMul: 0.8 } },
-    { id: 'blaster-plasma', slot: 'blaster', nama: 'Blaster Plasma', price: 360, desc: 'Blaster +50% damage, 10% lebih cepat.', effects: { rangedMul: 1.5, cooldownMul: 0.9 } },
+    { id: 'pedang-biasa', slot: 'pedang', nama: 'Tanpa Asahan', price: 0, desc: 'Bawaan awal.', effects: {} },
+    { id: 'blaster-biasa', slot: 'blaster', nama: 'Tanpa Laras', price: 0, desc: 'Bawaan awal.', effects: {} },
+    { id: 'mata-baja', slot: 'pedang', nama: 'Mata Baja', price: 90, desc: 'Senjata dekat +20% damage.', effects: { meleeMul: 1.2 } },
+    { id: 'bilah-api', slot: 'pedang', nama: 'Bilah Api', price: 220, desc: 'Senjata dekat +45% damage.', effects: { meleeMul: 1.45 } },
+    { id: 'pedang-kristal', slot: 'pedang', nama: 'Asahan Kristal', price: 380, desc: 'Senjata dekat +70% damage.', effects: { meleeMul: 1.7 } },
+    { id: 'laras-panjang', slot: 'blaster', nama: 'Laras Panjang', price: 100, desc: 'Senjata jauh +20% damage.', effects: { rangedMul: 1.2 } },
+    { id: 'pendingin', slot: 'blaster', nama: 'Pendingin', price: 200, desc: 'Senjata jauh 20% lebih cepat.', effects: { rangedCooldownMul: 0.8 } },
+    { id: 'blaster-plasma', slot: 'blaster', nama: 'Laras Plasma', price: 360, desc: 'Senjata jauh +50% damage, 10% lebih cepat.', effects: { rangedMul: 1.5, rangedCooldownMul: 0.9 } },
     { id: 'rompi-kulit', slot: 'armor', nama: 'Rompi Kulit', price: 80, desc: 'HP maksimal +10.', effects: { maxHp: 10 } },
     { id: 'zirah-besi', slot: 'armor', nama: 'Zirah Besi', price: 190, desc: 'HP maksimal +20.', effects: { maxHp: 20 } },
     { id: 'jubah-bintang', slot: 'armor', nama: 'Jubah Bintang', price: 320, desc: 'HP +12 dan gerak 5% lebih cepat.', effects: { maxHp: 12, speedMul: 1.05 } },
@@ -32,7 +33,7 @@
   function get(id) { return BY_ID[id] || null; }
   function bySlot(slot) { return ITEMS.filter((it) => it.slot === slot); }
   function baseLoadout() {
-    return { meleeMul: 1, rangedMul: 1, maxHp: 0, cooldownMul: 1, speedMul: 1, coinMul: 1 };
+    return { meleeMul: 1, rangedMul: 1, maxHp: 0, cooldownMul: 1, rangedCooldownMul: 1, speedMul: 1, coinMul: 1 };
   }
 
   return { ITEMS, BY_ID, SLOTS, BASE_OWNED, BASE_EQUIPPED, get, bySlot, baseLoadout };
