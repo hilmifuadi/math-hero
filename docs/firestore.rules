@@ -23,6 +23,34 @@ service cloud.firestore {
         && (!('meta' in request.resource.data)
             || (request.resource.data.meta is map && request.resource.data.meta.size() <= 8));
     }
+    // Progres Math Hero 4: satu dokumen per pemain, id = uid acak 16 karakter.
+    // Dokumen hanya boleh ditulis ke id-nya sendiri; daftar semua simpanan ditutup.
+    match /saves/{uid} {
+      allow get: if true;
+      allow list: if false;
+      allow delete: if false;
+      allow create, update: if
+        request.resource.data.keys().hasOnly(['uid', 'v', 'nama', 'koin', 'owned', 'equipped', 'best', 'totalStars', 'points', 'stats', 'weapons', 'gear', 'base', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['uid', 'v', 'nama', 'koin', 'owned', 'equipped', 'best', 'totalStars', 'points', 'stats', 'weapons', 'gear', 'base', 'updatedAt'])
+        && request.resource.data.base is map
+        && request.resource.data.points is int
+        && request.resource.data.stats is map
+        && request.resource.data.weapons is list && request.resource.data.weapons.size() <= 20
+        && request.resource.data.gear is map
+        && request.resource.data.uid == uid
+        && uid.matches('^[a-z0-9]{8,32}$')
+        && request.resource.data.v is int
+        && request.resource.data.nama is string
+        && request.resource.data.nama.size() >= 1 && request.resource.data.nama.size() <= 12
+        && request.resource.data.koin is int
+        && request.resource.data.koin >= 0 && request.resource.data.koin <= 1000000
+        && request.resource.data.totalStars is int
+        && request.resource.data.totalStars >= 0 && request.resource.data.totalStars <= 10000
+        && request.resource.data.owned is list && request.resource.data.owned.size() <= 40
+        && request.resource.data.equipped is map
+        && request.resource.data.best is map && request.resource.data.best.size() <= 40
+        && request.resource.data.updatedAt is int;
+    }
     match /{document=**} {
       allow read, write: if false;
     }

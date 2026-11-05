@@ -241,6 +241,21 @@ Aturan Firestore hanya mengizinkan membaca dan **menambah** skor yang bentuknya 
 
 `public/shared/` menampung kode yang dipakai bersama MH1-MH3: kertas coret (`scratchpad.js`), kredit (`credits.js`), dan pustaka animasi GSAP 3.15.0 di `vendor/gsap/`. Aturan dan cara memuat ada di `public/shared/README.md`. Membuat seri baru (MH4): `node scripts/buat_seri.js mh4 "Judul"`, lalu ikuti `public/shared/PANDUAN_SERI_BARU.md`.
 
+## Aset Math Hero 4
+
+Sprite MH4 ada di `public/assets/mh4/v2/`, dan sumber tiap aset dicatat di `SUMBER.md` di folder itu. Lisensi versi gratis Cute Fantasy dan Mystic Woods hanya untuk non-komersial, jadi keduanya perlu lisensi berbayar bila MH4 kelak dijual:
+
+- Cute Fantasy: https://kenmi-art.itch.io/cute-fantasy-rpg
+- Mystic Woods: https://game-endeavor.itch.io/mystic-woods
+
+Untuk membuat ulang aset dari paket yang sudah diekstrak, jalankan dari root repo:
+
+```bash
+node scripts/prepare_assets_mh4.js "<folder hasil ekstrak>"
+```
+
+Paket yang tidak ada di folder itu dilewati dengan peringatan.
+
 ## Lisensi dan atribusi
 
 Kode game memakai lisensi MIT (lihat `LICENSE`). Aset pihak ketiga (sprite CraftPix, font, ikon SVG) memiliki lisensinya sendiri dan tidak tercakup MIT; rincian di `public/assets/svg/CREDITS.md`. Paket sumber asli CraftPix tidak disertakan di repositori ini (lisensinya tidak mengizinkan menyebarkan file aslinya); hanya sprite olahan di `public/assets/game` (Math Hero 1) dan atlas olahan `public/mh2/assets/sprites.png` (Math Hero 2) yang dipakai game.
