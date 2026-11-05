@@ -1,10 +1,12 @@
 # Spesifikasi Level Generator Platformer (Kit F5)
 
 Status: disetujui bosskuh (2026-10-28), ditambah pemicu soal (benda macet). G1 sampai G5 selesai: mekanik di
-`mh3/js/plat/sim.js` + `scene.js`, generator `public/shared/js/levelgen.js` + pustaka 24 ruang `levelgen.chunks.js`,
-pemeriksa `levelcheck.js` mengerti mekanik baru, bot pemain `tests/lib/kejar_bot.js`, dan 8 level Kejar MH3 dibuat
-generator dengan seed tetap (`mh3/js/plat/levels.js`). Uji: `tests/mh3_mekanik.test.js`, `tests/mh3_plat.test.js`,
-`tests/mh3_plat_ui.js`. Pustaka baru 24 ruang (bukan 40); ruang boleh dipakai ulang sampai 4 kali bila pilihan sedikit.
+`mh3/js/plat/sim.js` + `scene.js`, inti generator generik `public/shared/levelgen/core.js`, aturan khas MH3 di
+`public/mh3/js/gen/rules.js`, API lama `public/shared/js/levelgen.js`, dan pustaka ruang `levelgen.chunks.js`.
+Pemeriksa `levelcheck.js` mengerti mekanik baru, dan 8 level Kejar MH3 dibuat generator dengan seed tetap
+(`mh3/js/plat/levels.js`). Uji: `tests/mh3_mekanik.test.js`, `tests/mh3_plat.test.js`, `tests/levelgen_snapshot.test.js`,
+`tests/mh3_plat_ui.js`. Bot pemain tidak dipakai lagi; penamatan level diuji manual. Ruang boleh dipakai ulang
+sampai 4 kali bila pilihan sedikit.
 
 ## 1. Pelajaran dari contoh `public/assets/advanced-level-example-*`
 
@@ -127,7 +129,8 @@ Aturan tampilan:
 
 ## 6. Cara kerja generator
 
-Berkas: `public/shared/js/levelgen.js`, API `window.MHKit.levelgen` (juga `require` di Node). Tanpa build, tanpa CDN.
+Berkas: inti `public/shared/levelgen/core.js`, aturan MH3 `public/mh3/js/gen/rules.js`, dan API
+`public/shared/js/levelgen.js` (`window.MHKit.levelgen`, juga `require` di Node). Tanpa build, tanpa CDN.
 
 ```js
 const lv = MHKit.levelgen.generate({ seed: 31, tier: 1, tema: 'gua', rooms: 9, intro: ['pipa'], rows: 'auto' });

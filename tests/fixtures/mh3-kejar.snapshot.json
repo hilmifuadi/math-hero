@@ -1,0 +1,70 @@
+{
+  "catatan": "Hash peta kampanye MH3 Kejar. Perubahan disengaja: node tests/levelgen_snapshot.test.js --update",
+  "versi": 1,
+  "levels": [
+    {
+      "id": 1,
+      "nama": "Jejak di Padang",
+      "seed": 101,
+      "lebar": 266,
+      "tinggi": 24,
+      "hash": "c24d782163147c201eccd7a0e3dcad6c1ffb99fe3827713d7fe3e307b61fcce0"
+    },
+    {
+      "id": 2,
+      "nama": "Kejar Lewat Bukit",
+      "seed": 201,
+      "lebar": 284,
+      "tinggi": 31,
+      "hash": "a512237057542c11af8dccd01854653208b1387997f6c97f72c6a106b3f2f3a9"
+    },
+    {
+      "id": 3,
+      "nama": "Jalan Kristal",
+      "seed": 301,
+      "lebar": 329,
+      "tinggi": 24,
+      "hash": "04d5e663cfc788831c496a1dacd0451034bc5d67551c9ac6a713e8986631e0b0"
+    },
+    {
+      "id": 4,
+      "nama": "Jurang Berkilau",
+      "seed": 401,
+      "lebar": 313,
+      "tinggi": 41,
+      "hash": "41cc04504046deaea1738c94311542e6e41fbe5a813e1e62db9fc3eeceb415a9"
+    },
+    {
+      "id": 5,
+      "nama": "Jembatan Kabut",
+      "seed": 501,
+      "lebar": 329,
+      "tinggi": 39,
+      "hash": "baa10cc1883e92bec1101929588e109a38f636da22f4d7a192692e22961a0267"
+    },
+    {
+      "id": 6,
+      "nama": "Rawa Dalam",
+      "seed": 601,
+      "lebar": 300,
+      "tinggi": 50,
+      "hash": "e17f53c6eadce3f8af350441f45b46c573324a9dba9f7439fbf833f22665730b"
+    },
+    {
+      "id": 7,
+      "nama": "Tangga Awan",
+      "seed": 701,
+      "lebar": 325,
+      "tinggi": 43,
+      "hash": "a5fc860bf1c66c2d9a79c5451d818c41e61624af414504a58d1d2743029e8275"
+    },
+    {
+      "id": 8,
+      "nama": "Menara Petir",
+      "seed": 801,
+      "lebar": 340,
+      "tinggi": 75,
+      "hash": "9371db1b489ef6c880d5c72211309b8b09f0d621cef0c950bd34a7df0b461dcd"
+    }
+  ]
+}

@@ -26,7 +26,7 @@ Tambah `<script>` di `index.html` sesuai kebutuhan. Urutan: modul kit dulu, lalu
 | Butuh | Muat | Dokumen |
 | --- | --- | --- |
 | Soal (semua seri) | `shared/js/concepts.js`, `shared/js/questionbank.js` | `Bank.soal(skill, tingkat, rng)`; `Bank.skills()` untuk katalog |
-| Platformer | `shared/js/physics.js` (+ `levelgen.js`, `levelgen.chunks.js` bila memakai generator) | `LEVELGEN.md` |
+| Platformer | `shared/js/physics.js` (+ inti `shared/levelgen/core.js`, `shared/js/levelgen.chunks.js`, dan `LevelRules` seri; contoh `mh3/js/gen/rules.js`) | `LEVELGEN.md` |
 | Pemeriksa level | `shared/js/levelcheck.js` (Node dan browser) | tulis adaptor seperti `fromKejar` |
 | Skor bersama, bonus waktu, Papan Juara | `js/firebase-config.js` (milik penerapan), `shared/js/scores.js`, `timebonus.js`, `juara.js` | bagian "Merangkai layanan meta" di `shared/README.md` |
 | Kertas coret | sudah ada di templat | panggil `Scratchpad.setAvailable(true)` saat soal menghentikan waktu |

@@ -1,0 +1,211 @@
+// Tes progresi, toko, equipment, dan bentuk data cloud MH4.
+// Jalankan: node tests/mh4_progress.test.js
+'use strict';
+const assert = require('assert');
+const Sim = require('../public/mh4/js/sim.js');
+const Shop = require('../public/mh4/js/shop.js');
+const Progress = require('../public/mh4/js/progress.js');
+
+let n = 0;
+const ok = (name, fn) => { fn(); n++; console.log('ok ' + name); };
+const tick = (g, input) => Sim.update(g, 1 / 60, input || {});
+
+const LEVEL = {
+  tier: 0,
+  map: [
+    '....................',
+    '....................',
+    '....................',
+    '....................',
+    'S.e..............E..',
+    '####################',
+  ],
+};
+
+function memStorage() {
+  const map = new Map();
+  return {
+    getItem: (k) => (map.has(k) ? map.get(k) : null),
+    setItem: (k, v) => { map.set(k, String(v)); },
+  };
+}
+
+ok('katalog toko punya empat slot dan item awal gratis', () => {
+  assert.deepStrictEqual(Shop.SLOTS, ['pedang', 'blaster', 'armor', 'jimat']);
+  for (const slot of Shop.SLOTS) assert.ok(Shop.bySlot(slot).length >= 1, 'slot ' + slot + ' kosong');
+  for (const id of Shop.BASE_OWNED) assert.strictEqual(Shop.get(id).price, 0);
+  assert.strictEqual(new Set(Shop.ITEMS.map((it) => it.id)).size, Shop.ITEMS.length, 'id item unik');
+});
+
+ok('profil baru bersih dan loadout awal netral', () => {
+  const p = Progress.newProfile('OPDI', { uid: 'abcdef0123456789', now: 1000 });
+  assert.strictEqual(p.nama, 'OPDI');
+  assert.strictEqual(p.koin, 0);
+  assert.deepStrictEqual(p.owned.sort(), Shop.BASE_OWNED.slice().sort());
+  const lo = Progress.loadout(p);
+  assert.strictEqual(lo.meleeMul, 1);
+  assert.strictEqual(lo.rangedMul, 1);
+  assert.strictEqual(lo.maxHp, 0);
+  assert.strictEqual(lo.cooldownMul, 1);
+  assert.strictEqual(lo.speedMul, 1);
+});
+
+ok('membeli item memotong koin, menandai dimiliki, dan langsung memasang', () => {
+  const p = Progress.newProfile('OPDI', { uid: 'abcdef0123456789', now: 1 });
+  p.koin = 500;
+  const no = Progress.buy(p, 'mata-baja', 2);
+  assert.ok(no.ok);
+  assert.strictEqual(p.koin, 410);
+  assert.ok(p.owned.includes('mata-baja'));
+  assert.strictEqual(p.equipped.pedang, 'mata-baja');
+  const again = Progress.buy(p, 'mata-baja');
+  assert.strictEqual(again.reason, 'sudah-punya');
+  p.koin = 10;
+  const poor = Progress.buy(p, 'pedang-kristal');
+  assert.strictEqual(poor.reason, 'koin-kurang');
+  assert.ok(poor.kurang > 0);
+});
+
+ok('equip hanya boleh untuk item yang dimiliki dan slotnya cocok', () => {
+  const p = Progress.newProfile('OPDI', { uid: 'abcdef0123456789' });
+  p.koin = 1000;
+  Progress.buy(p, 'rompi-kulit');
+  Progress.buy(p, 'sepatu-angin');
+  const res = Progress.equip(p, 'sepatu-angin');
+  assert.ok(res.ok);
+  assert.strictEqual(p.equipped.jimat, 'sepatu-angin');
+  assert.strictEqual(Progress.equip(p, 'pedang-kristal').reason, 'belum-punya');
+  // Item yang belum dibeli tidak bisa dipasang lewat data mentah.
+  const clean = Progress.normalize({ uid: 'abcdef0123456789', equipped: { pedang: 'pedang-kristal', jimat: 'sepatu-angin' } });
+  assert.strictEqual(clean.equipped.pedang, 'pedang-biasa');
+  assert.strictEqual(clean.equipped.jimat, null);
+});
+
+ok('loadout menjumlahkan efek equipment', () => {
+  const p = Progress.newProfile('OPDI', { uid: 'abcdef0123456789' });
+  p.owned.push('mata-baja', 'pendingin', 'zirah-besi', 'magnet-koin');
+  p.equipped = { pedang: 'mata-baja', blaster: 'pendingin', armor: 'zirah-besi', jimat: 'magnet-koin' };
+  const lo = Progress.loadout(p);
+  assert.strictEqual(lo.meleeMul, 1.2);
+  assert.strictEqual(lo.cooldownMul, 0.8);
+  assert.strictEqual(lo.maxHp, 20);
+  assert.strictEqual(lo.coinMul, 1.25);
+});
+
+ok('sim memakai loadout: HP, damage, cooldown, dan kecepatan', () => {
+  const base = Sim.create(LEVEL);
+  const buff = Sim.create(LEVEL, { loadout: { maxHp: 20, speedMul: 1.5, meleeMul: 2, cooldownMul: 0.5 } });
+  assert.strictEqual(base.maxHp, 30);
+  assert.strictEqual(buff.maxHp, 50);
+  assert.strictEqual(buff.hp, 50);
+
+  const a = Sim.create(LEVEL), b = Sim.create(LEVEL, { loadout: { meleeMul: 2 } });
+  const e1 = a.enemies[0], e2 = b.enemies[0];
+  a.p.x = e1.x - 8; a.p.y = e1.y; a.face = 1;
+  b.p.x = e2.x - 8; b.p.y = e2.y; b.face = 1;
+  tick(a, { attack: true }); tick(b, { attack: true });
+  const dealtA = e1.maxHp - e1.hp, dealtB = e2.maxHp - e2.hp;
+  assert.ok(dealtB > dealtA, `damage buff (${dealtB}) harus lebih dari dasar (${dealtA})`);
+
+  const c = Sim.create(LEVEL), d = Sim.create(LEVEL, { loadout: { speedMul: 1.5 } });
+  for (let i = 0; i < 10; i++) { tick(c, { right: true }); tick(d, { right: true }); }
+  assert.ok(d.p.x > c.p.x, 'speedMul harus menambah jarak tempuh');
+});
+
+ok('ganti equipment langsung berlaku pada game yang sedang berjalan', () => {
+  const p = Progress.newProfile('OPDI', { uid: 'abcdef0123456789' });
+  p.owned.push('mata-baja', 'zirah-besi');
+  const g = Sim.create(LEVEL, { loadout: Progress.loadout(p) });
+  assert.strictEqual(g.maxHp, 30);
+  assert.strictEqual(g.loadout.meleeMul, 1);
+
+  p.equipped.pedang = 'mata-baja';
+  p.equipped.armor = 'zirah-besi';
+  Sim.applyLoadout(g, Progress.loadout(p));
+
+  assert.strictEqual(g.maxHp, 50, 'max HP baru harus langsung terpasang');
+  assert.strictEqual(g.hp, 50, 'HP penuh ikut naik saat max HP bertambah');
+  assert.strictEqual(g.loadout.meleeMul, 1.2, 'damage pedang baru harus langsung terpasang');
+
+  // HP yang sedang terisi sebagian tetap proporsional, tidak reset gratis.
+  g.hp = 20; // 40% dari 50
+  p.equipped.armor = null;
+  Sim.applyLoadout(g, Progress.loadout(p));
+  assert.strictEqual(g.maxHp, 30);
+  assert.strictEqual(g.hp, 12, 'rasio HP dipertahankan saat max HP turun');
+});
+
+ok('hasil level memberi koin, menyimpan bintang terbaik, dan membuka level', () => {
+  const p = Progress.newProfile('OPDI', { uid: 'abcdef0123456789', now: 10 });
+  assert.ok(Progress.unlocked(p, 1));
+  assert.ok(!Progress.unlocked(p, 2));
+  const first = Progress.gain(p, { levelId: 1, stars: 3, chest: true, boss: false }, 20);
+  assert.ok(first.first);
+  assert.strictEqual(first.coins, 3 * 5 + 30 + 20);
+  assert.strictEqual(p.koin, first.coins);
+  assert.strictEqual(p.best[1].stars, 3);
+  assert.strictEqual(p.totalStars, 3);
+  assert.ok(Progress.unlocked(p, 2), 'level 2 terbuka setelah level 1 selesai');
+  assert.ok(!Progress.unlocked(p, 3));
+
+  const repeat = Progress.gain(p, { levelId: 1, stars: 1, chest: false }, 30);
+  assert.ok(!repeat.first);
+  assert.strictEqual(p.best[1].stars, 3, 'bintang tidak turun saat diulang');
+  assert.strictEqual(repeat.coins, 5, 'ulangan hanya memberi koin bintang');
+  assert.ok(p.best[1].chest, 'peti yang pernah dibuka tetap tercatat');
+});
+
+ok('koin dari hasil level ikut pengali Magnet Koin', () => {
+  const p = Progress.newProfile('OPDI', { uid: 'abcdef0123456789' });
+  p.owned.push('magnet-koin');
+  p.equipped.jimat = 'magnet-koin';
+  const res = Progress.gain(p, { levelId: 1, stars: 2, chest: false, boss: false }, 5);
+  assert.strictEqual(res.coins, Math.round((10 + 20) * 1.25));
+});
+
+ok('penyimpanan lokal bolak-balik dan data rusak tidak menjatuhkan game', () => {
+  const st = memStorage();
+  const p = Progress.newProfile('OPDI', { uid: 'abcdef0123456789', now: 5 });
+  p.koin = 123;
+  assert.ok(Progress.saveLocal(p, st));
+  const back = Progress.loadLocal(st);
+  assert.strictEqual(back.koin, 123);
+  assert.strictEqual(back.uid, 'abcdef0123456789');
+  st.setItem(Progress.KEY, '{rusak');
+  assert.strictEqual(Progress.loadLocal(st), null);
+  assert.strictEqual(st.getItem(Progress.KEY + '.rusak'), '{rusak');
+});
+
+ok('normalize membuang data asing dan klaim berlebih', () => {
+  const p = Progress.normalize({
+    uid: 'ABCDEF!!', nama: '  ', koin: -50, owned: ['mata-baja', 'tidak-ada', 3],
+    equipped: { pedang: 'mata-baja', armor: 'pedang-kristal' },
+    best: { 1: { stars: 999, chest: 1, done: 1 }, 99: { stars: 4 }, x: {} },
+    totalStars: 999,
+  });
+  assert.match(p.uid, /^[a-z0-9]{8,32}$/);
+  assert.strictEqual(p.koin, 0);
+  assert.ok(p.owned.includes('mata-baja'));
+  assert.ok(!p.owned.includes('tidak-ada'));
+  assert.strictEqual(p.equipped.pedang, 'mata-baja');
+  assert.strictEqual(p.equipped.armor, null);
+  assert.strictEqual(p.best[1].stars, 99);
+  assert.ok(!p.best[99]);
+  assert.strictEqual(p.totalStars, 99);
+});
+
+ok('dokumen cloud hanya berisi bidang yang diizinkan dan pilih data terbaru', () => {
+  const a = Progress.newProfile('A', { uid: 'aaaaaaaaaaaaaaaa', now: 10 });
+  const b = Progress.newProfile('B', { uid: 'bbbbbbbbbbbbbbbb', now: 20 });
+  assert.strictEqual(Progress.newer(a, b), b);
+  assert.strictEqual(Progress.newer(b, a), b);
+  assert.strictEqual(Progress.newer(a, null), a);
+  const doc = Progress.toCloud(a);
+  assert.deepStrictEqual(Object.keys(doc).sort(), [
+    'best', 'equipped', 'koin', 'nama', 'owned', 'totalStars', 'uid', 'updatedAt', 'v',
+  ].sort());
+  assert.strictEqual(doc.uid, a.uid);
+  assert.strictEqual(JSON.parse(JSON.stringify(doc)).v, Progress.VERSION);
+});
+
+console.log(`\n${n} tes progresi MH4 lulus.`);

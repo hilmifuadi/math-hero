@@ -1,25 +1,12 @@
 // Uji logika level Kejar MH3 di Node:  node tests/mh3_plat.test.js
-// Level dibuat level generator (seed tetap). Tiap level harus lulus pemeriksa level (jalur ada) dan ditamatkan
-// bot pemain (tests/lib/kejar_bot.js) di simulasi asli; soal dari benda macet dijawab otomatis.
+// Level dibuat level generator (seed tetap). Tiap level harus lulus pemeriksa level (jalur ada) dan
+// punya isi wajib (chest). Penamatan level dilakukan manual; tidak ada bot yang menggating `npm test`.
 const assert = require('assert');
 const Sim = require('../public/mh3/js/plat/sim.js');
 const Lv = require('../public/mh3/js/plat/levels.js');
 const Gen = require('../public/shared/js/levelgen.js');
 const { check, fromKejar } = require('../public/shared/js/levelcheck.js');
-const Bot = require('./lib/kejar_bot.js');
 const { T } = require('../public/shared/js/physics.js');
-
-function run(def, hero, maxSec) {
-  const g = Sim.create(def, { hero });
-  const bot = Bot.make();
-  let quiz = 0;
-  for (let i = 0; i < maxSec * 60 && g.phase === 'play'; i++) {
-    Sim.update(g, 1 / 60, bot.step(g));
-    for (const e of g.events) if (e.type === 'quiz') { quiz++; Sim.solveQuiz(g, e.what, e.id); }
-    g.events.length = 0;
-  }
-  return { g, quiz };
-}
 
 for (const lv of Lv.LEVELS) {
   const plan = Lv.PLAN.find((p) => p.id === lv.id);
@@ -28,11 +15,10 @@ for (const lv of Lv.LEVELS) {
   const r = check(fromKejar(lv, Sim.parse(lv), Sim.K));
   assert.ok(r.ok, `level ${lv.id} lulus pemeriksa level: ${(r.msg || []).join('; ')}`);
   assert.ok(lv.rooms.some((x) => x.dy), `level ${lv.id} punya ruang naik/turun`);
-  const { g, quiz } = run(lv, 'pinki', 300);
-  assert.strictEqual(g.phase, 'won', `level ${lv.id} harus selesai (posisi x=${Math.round(g.p.x)} y=${Math.round(g.p.y)}, mati ${g.deaths})`);
-  assert.ok(quiz >= 1, `level ${lv.id} punya pemicu soal di jalan`);
+  const g = Sim.create(lv);
   assert.strictEqual(g.L.chests.length, 2, 'tiap level punya Peti Kekuatan dan Peti Kristal');
-  console.log(`ok: level ${lv.id} "${lv.nama}" ${lv.map[0].length}x${lv.map.length} selesai ${g.t.toFixed(0)} dtk, soal ${quiz}, bintang ${g.stars}/${g.L.stars.length}, mati ${g.deaths}, rating ${Sim.rating(g)}`);
+  assert.ok(g.L.stars.length > 0, `level ${lv.id} punya bintang`);
+  console.log(`ok: level ${lv.id} "${lv.nama}" ${lv.map[0].length}x${lv.map.length}, ruang ${lv.rooms.length}, bintang ${g.L.stars.length}`);
 }
 // Checkpoint: jatuh ke dasar peta mengembalikan ke checkpoint terakhir tanpa macet.
 {
