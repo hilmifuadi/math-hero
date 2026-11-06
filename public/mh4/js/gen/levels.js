@@ -211,6 +211,8 @@
     return addEnemies(addDoors(addMech(addMiniBoss(addGates(level), p.id), p), p), p.tier);
   });
   const LEVELS = REGULAR.concat(TOWERS.map((t) => buildTower(t)));
+  // Nomor yang dilihat pemain mengikuti urutan cerita; id tetap dipakai untuk simpanan.
+  for (const l of LEVELS) l.no = ROUTE_ORDER.indexOf(l.id) + 1;
 
   // Tanah datar selebar `len` kolom ke kiri dari c, dengan ruang kepala. Mengembalikan baris berdiri.
   function flatAt(rows, c, len) {
