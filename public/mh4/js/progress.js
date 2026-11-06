@@ -193,7 +193,9 @@
     return { first, coins, points, score, bestScore: Math.max(prevScore, score), newBest: score > prevScore, total: totalScore(profile) };
   }
 
-  const totalScore = (profile) => Object.values(profile.best).reduce((n, b) => n + (b.score || 0), 0);
+  // Skor total hanya dari misi cerita, jadi nilainya punya batas. Level Acak dan Boss Acak tidak ikut.
+  const totalScore = (profile) => Story.ROUTE.filter((id) => !Story.ACAK.includes(id))
+    .reduce((n, id) => n + ((profile.best[id] && profile.best[id].score) || 0), 0);
 
   function spendPoint(profile, stat, now) {
     const def = STATS[stat];
