@@ -1315,6 +1315,7 @@
         ctx.textAlign = 'left';
       }
 
+      let quizBottom = 0;
       if (game.quiz) {
         // Soal gerbang di papan kayu, tetap terlihat tanpa menghentikan permainan.
         const q = game.quiz;
@@ -1323,7 +1324,22 @@
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         const w = Math.min(VW - 120, ctx.measureText(q.teks).width + 56);
         // Di atas (bawah HUD): tidak tertimpa tombol sentuh di bagian bawah layar HP.
-        const x = (VW - w) / 2, py = game.boss && !game.boss.defeated ? 92 : 64;
+        const x = (VW - w) / 2;
+        let py = game.boss && !game.boss.defeated ? 92 : 64;
+        // Balok jawaban tidak boleh tertutup: bila papan soal menimpanya, papan pindah ke bawah
+        // balok, atau ke atasnya bila di bawah sudah dekat tombol sentuh.
+        let bTop = Infinity, bBot = -Infinity;
+        for (const b of q.blocks || []) {
+          if (b.dead) continue;
+          bTop = Math.min(bTop, (b.y - camY) * ZOOM - 6);
+          bBot = Math.max(bBot, (b.y + b.h - camY) * ZOOM + 6);
+        }
+        const PANEL_H = 56;
+        if (bTop < py + PANEL_H && bBot > py) {
+          if (bBot + PANEL_H <= VH - 120) py = Math.round(bBot);
+          else if (bTop - PANEL_H >= 44) py = Math.round(bTop - PANEL_H);
+        }
+        quizBottom = py + PANEL_H;
         ctx.fillStyle = 'rgba(58,33,18,.95)'; ctx.fillRect(x, py, w, 32);
         ctx.strokeStyle = '#d9a35a'; ctx.lineWidth = 2; ctx.strokeRect(x + 1, py + 1, w - 2, 30);
         ctx.fillStyle = '#fff3d6'; ctx.fillText(q.teks, x + w / 2, py + 17, w - 16);
@@ -1335,7 +1351,7 @@
         ctx.restore();
       }
       if (ui.toast) {
-        const ty = game.quiz ? (game.boss && !game.boss.defeated ? 150 : 122) : (game.boss && !game.boss.defeated ? 76 : 50);
+        const ty = game.quiz ? quizBottom + 12 : (game.boss && !game.boss.defeated ? 76 : 50);
         ctx.save();
         ctx.globalAlpha = Math.min(1, ui.toastT || 1);
         ctx.fillStyle = 'rgba(0,0,0,.72)';
