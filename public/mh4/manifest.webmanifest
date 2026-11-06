@@ -1,0 +1,10 @@
+{
+  "name": "Math Hero 4: Arka dan Kabut Kacau",
+  "short_name": "Math Hero 4",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#08120d",
+  "theme_color": "#08120d"
+}
