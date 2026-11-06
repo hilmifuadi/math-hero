@@ -178,7 +178,7 @@ ok('animasi hewan tidak mundur: arah gambar mengikuti arah jalan', () => {
 
 ok('bangun kampung: beli, peta berubah, semua tempat tetap bisa didatangi', () => {
   const p = Progress.newProfile('A');
-  p.koin = 100;
+  p.koin = 10;
   assert.strictEqual(Farm.buyBuild(p, 'sungai').reason, 'koin-kurang');
   p.koin = 99999;
   for (const b of Farm.BUILDS) assert.ok(Farm.buyBuild(p, b.id).ok, b.id);
@@ -237,7 +237,7 @@ ok('senjata pamungkas hanya bisa dibeli setelah tamat', () => {
   assert.strictEqual(Progress.buyWeapon(p, 'bumerang').reason, 'terkunci');
   p.best[Story.FINALE] = { done: true, stars: 0 };
   assert.ok(Progress.buyWeapon(p, 'bumerang').ok);
-  assert.strictEqual(p.koin, 15000);
+  assert.strictEqual(p.koin, 18000);
   assert.ok(Progress.equipWeapon(p, 'bumerang').ok);
   assert.strictEqual(Progress.buyWeapon(p, 'pedang').reason, 'tidak-dijual');
   assert.ok(Progress.normalize(JSON.parse(JSON.stringify(p))).weapons.includes('bumerang'), 'tersimpan');

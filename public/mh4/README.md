@@ -86,10 +86,10 @@ cerita yang sudah kalah. Seed tampil di layar menang dan bisa diketik di Papan M
 
 ## Bangun kampung dan senjata pamungkas
 
-Papan "Bangun" di barat alun-alun menjual 12 hiasan dan bangunan (`Farm.BUILDS`, 150 sampai 8.000 koin) yang tersimpan di
+Papan "Bangun" di barat alun-alun menjual 12 hiasan dan bangunan (`Farm.BUILDS`, 60 sampai 3.200 koin) yang tersimpan di
 `profile.base.built`. `World.kampung(built)` menyusun peta: kampung kini 38 baris, dan tanah selatan dipakai bengkel, rumah ramuan,
 sekolah, dan altar. Ternak tambahan menggandakan hasil kandang. Titu si kucing mengikuti Arka, tertidur bila Arka diam, bisa dielus,
-dan disebut semua warga. Tiga senjata pamungkas (Pedang Angin, Bumerang, Panah Cahaya, 5.000 koin) dibeli di Perlengkapan setelah
+dan disebut semua warga. Tiga senjata pamungkas (Pedang Angin, Bumerang, Panah Cahaya, 2.000 koin) dibeli di Perlengkapan setelah
 Raja Goblin kalah; damage biasa, keunggulannya pola serang.
 
 ## Warga

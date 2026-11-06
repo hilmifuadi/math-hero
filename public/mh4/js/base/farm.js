@@ -26,20 +26,20 @@
   };
 
   // Bangun kampung: tujuan koin jangka panjang. Hanya hiasan dan kenyamanan, tidak mengubah kekuatan Arka.
-  // Urut dari murah ke mahal. Harga disusun dari pemasukan sekitar 80 sampai 100 koin per hari main.
+  // Urut dari murah ke mahal. Harga disusun dari pemasukan sekitar 80 sampai 100 koin per hari main, lalu diturunkan menjadi 4/10.
   const BUILDS = [
-    { id: 'sungai', nama: 'Teratai dan Batu Sungai', price: 150, desc: 'Teratai mengapung dan batu di sungai.' },
-    { id: 'titu', nama: 'Titu si Kucing', price: 150, desc: 'Kucing oranye yang mengikuti Arka ke mana pun di kampung.' },
-    { id: 'bunga', nama: 'Kebun Bunga', price: 400, desc: 'Bunga warna-warni di tepi ladang dan jalan.' },
-    { id: 'ternak', nama: 'Ternak Tambahan', price: 600, desc: 'Satu sapi, satu domba, dan dua ayam. Hasil kandang jadi dua kali.' },
-    { id: 'taman', nama: 'Taman Alun-Alun', price: 800, desc: 'Bangku dan pot bunga di sekeliling air mancur.' },
-    { id: 'unggun', nama: 'Api Unggun', price: 1200, desc: 'Tempat warga berkumpul di tepi sungai.' },
-    { id: 'dapur', nama: 'Dapur Umum', price: 1800, desc: 'Dapur bersama di antara rumah warga.' },
-    { id: 'bengkel', nama: 'Bengkel Ayah Hilmi', price: 2500, desc: 'Bengkel baru di selatan kampung, lengkap dengan landasan tempa.' },
-    { id: 'ramuan', nama: 'Rumah Ramuan', price: 3200, desc: 'Rumah ungu dengan meja ramuan yang bergelembung.' },
-    { id: 'perahu', nama: 'Perahu Sungai', price: 3500, desc: 'Perahu kecil yang berlayar pelan di sungai.' },
-    { id: 'sekolah', nama: 'Sekolah Nadiya', price: 4500, desc: 'Sekolah kampung tempat Nadiya mengajar.' },
-    { id: 'altar', nama: 'Altar Kristal Bilangan', price: 8000, desc: 'Tempat Kristal Bilangan bersinar menjaga kampung.' },
+    { id: 'sungai', nama: 'Teratai dan Batu Sungai', price: 60, desc: 'Teratai mengapung dan batu di sungai.' },
+    { id: 'titu', nama: 'Titu si Kucing', price: 60, desc: 'Kucing oranye yang mengikuti Arka ke mana pun di kampung.' },
+    { id: 'bunga', nama: 'Kebun Bunga', price: 160, desc: 'Bunga warna-warni di tepi ladang dan jalan.' },
+    { id: 'ternak', nama: 'Ternak Tambahan', price: 240, desc: 'Satu sapi, satu domba, dan dua ayam. Hasil kandang jadi dua kali.' },
+    { id: 'taman', nama: 'Taman Alun-Alun', price: 320, desc: 'Bangku dan pot bunga di sekeliling air mancur.' },
+    { id: 'unggun', nama: 'Api Unggun', price: 480, desc: 'Tempat warga berkumpul di tepi sungai.' },
+    { id: 'dapur', nama: 'Dapur Umum', price: 720, desc: 'Dapur bersama di antara rumah warga.' },
+    { id: 'bengkel', nama: 'Bengkel Ayah Hilmi', price: 1000, desc: 'Bengkel baru di selatan kampung, lengkap dengan landasan tempa.' },
+    { id: 'ramuan', nama: 'Rumah Ramuan', price: 1280, desc: 'Rumah ungu dengan meja ramuan yang bergelembung.' },
+    { id: 'perahu', nama: 'Perahu Sungai', price: 1400, desc: 'Perahu kecil yang berlayar pelan di sungai.' },
+    { id: 'sekolah', nama: 'Sekolah Nadiya', price: 1800, desc: 'Sekolah kampung tempat Nadiya mengajar.' },
+    { id: 'altar', nama: 'Altar Kristal Bilangan', price: 3200, desc: 'Tempat Kristal Bilangan bersinar menjaga kampung.' },
   ];
   const BUILD_IDS = BUILDS.map((b) => b.id);
 
