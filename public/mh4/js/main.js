@@ -1353,6 +1353,24 @@
   }
   updateSoundBtn();
 
+  // Tingkat terlihat tombol sentuh: pilihan tampilan di perangkat ini, bukan bagian progres.
+  const ALPHA_KEY = 'mathHero4.btnAlpha', ALPHAS = [1, 0.7, 0.4];
+  let btnAlpha = 0.7;
+  try { const v = Number(localStorage.getItem(ALPHA_KEY)); if (ALPHAS.includes(v)) btnAlpha = v; } catch (e) { /* tanpa penyimpanan */ }
+  function applyBtnAlpha() {
+    if (document.documentElement.style && document.documentElement.style.setProperty) document.documentElement.style.setProperty('--btn-alpha', String(btnAlpha));
+    const b = document.getElementById('btnalpha');
+    if (b) b.textContent = `Tombol ${Math.round(btnAlpha * 100)}%`;
+  }
+  const alphaBtn = document.getElementById('btnalpha');
+  if (alphaBtn) alphaBtn.addEventListener('click', () => {
+    btnAlpha = ALPHAS[(ALPHAS.indexOf(btnAlpha) + 1) % ALPHAS.length];
+    try { localStorage.setItem(ALPHA_KEY, String(btnAlpha)); } catch (e) { /* tanpa penyimpanan */ }
+    playSfx('klik');
+    applyBtnAlpha();
+  });
+  applyBtnAlpha();
+
   document.getElementById('start').addEventListener('click', startGame);
   document.getElementById('creditbtn').addEventListener('click', () => openCredits());
   document.getElementById('creditclose').addEventListener('click', closeCredits);
