@@ -51,6 +51,7 @@
   let paused = false, time = 0, toast = '', toastT = 0, last = 0;
   let wasPaused = false;
   let currentQ = null;
+  Progress.setSlot(Progress.lastSlot());
   let profile = Progress.loadLocal() || Progress.newProfile('PEMAIN');
   let cloudNote = '';
 
@@ -748,7 +749,8 @@
     if (profile.playDay !== key) { profile.playDay = key; profile.playSec = 0; }
     profile.playSec = (profile.playSec || 0) + dt;
     playSaveT += dt;
-    if (playSaveT > 30) { playSaveT = 0; Progress.saveLocal(profile); }
+    // Di layar judul belum ada slot yang dipilih, jadi jangan menyimpan profil kosong.
+    if (playSaveT > 30) { playSaveT = 0; if (mode !== 'title') Progress.saveLocal(profile); }
   }
 
   function talkSari() {
@@ -1373,7 +1375,14 @@
   });
   applyBtnAlpha();
 
-  document.getElementById('start').addEventListener('click', startGame);
+  // Tombol besar: lanjutkan slot terakhir, atau minta nama di slot kosong pertama.
+  document.getElementById('start').addEventListener('click', () => {
+    if (Progress.loadLocal()) { startGame(); return; }
+    const empty = [0, 1, 2].find((k) => !Progress.loadLocal(undefined, k));
+    slotEdit = empty === undefined ? Progress.lastSlot() : empty;
+    slotDelete = -1;
+    renderSlots();
+  });
   document.getElementById('creditbtn').addEventListener('click', () => openCredits());
   document.getElementById('creditclose').addEventListener('click', closeCredits);
   document.getElementById('titleseries').addEventListener('click', leaveToSeries);
@@ -1407,19 +1416,90 @@
   document.getElementById('again').addEventListener('click', () => startLevel(idx));
   document.getElementById('next').addEventListener('click', returnHome);
 
-  // Simpan sejak awal: tanpa ini tiap muat ulang membuat profil dan uid baru.
-  Progress.saveLocal(profile);
-  document.getElementById('start').textContent = profile.base.intro ? 'Lanjutkan' : 'Mulai Petualangan';
-  baseGame = BaseSim.create('kampung', null, profile.base.built);
-  baseGame.animalReady = (kind) => Farm.animalReady(profile.base, kind);
-  baseView = BaseScene.create(canvas);
-  setMode('title');
-  titleEl.classList.remove('hidden');
-  checkRotate();
-  refreshAll();
-  // Muat progres cloud setelah game tampil supaya jaringan tidak menahan layar.
-  if (Cloud) {
-    Cloud.load(profile.uid).then((data) => {
+  // --- slot pemain ---
+  // Tiap slot punya nama, progres, dan uid cloud sendiri. Nama dipakai di papan skor.
+  let slotEdit = -1, slotDelete = -1;
+  function slotInfo(p) {
+    const done = Story.doneCount(p);
+    return `${done} misi selesai · skor ${Progress.totalScore(p)} · koin ${p.koin}`;
+  }
+  function renderSlots() {
+    const box = document.getElementById('slots');
+    if (!box) return;
+    box.innerHTML = '';
+    for (let i = 0; i < Progress.SLOTS; i++) {
+      const p = Progress.loadLocal(undefined, i);
+      const row = document.createElement('div');
+      row.className = 'slot' + (i === Progress.lastSlot() && p ? ' on' : '');
+      const info = document.createElement('div');
+      info.className = 'info';
+      const btn = (label, cls, fn) => { const b = document.createElement('button'); b.className = cls; b.textContent = label; b.addEventListener('click', fn); return b; };
+      if (slotEdit === i) {
+        const input = document.createElement('input');
+        input.maxLength = 12; input.placeholder = 'Nama pemain'; input.value = '';
+        info.appendChild(input);
+        row.appendChild(info);
+        const ok = () => {
+          const nama = input.value.trim().slice(0, 12) || `PEMAIN ${i + 1}`;
+          slotEdit = -1;
+          chooseSlot(i, Progress.newProfile(nama));
+        };
+        input.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') ok(); });
+        row.appendChild(btn('Mulai', 'primary', ok));
+        row.appendChild(btn('Batal', 'ghost', () => { slotEdit = -1; renderSlots(); }));
+        box.appendChild(row);
+        setTimeout(() => input.focus(), 0);
+        continue;
+      }
+      if (p) {
+        const b = document.createElement('b'); b.textContent = p.nama;
+        const sub = document.createElement('div'); sub.textContent = slotDelete === i ? 'Hapus semua progres slot ini?' : slotInfo(p);
+        info.appendChild(b); info.appendChild(sub);
+        row.appendChild(info);
+        if (slotDelete === i) {
+          row.appendChild(btn('Ya, hapus', 'primary', () => {
+            Progress.clearSlot(i);
+            slotDelete = -1;
+            // Slot aktif terhapus: pindah ke slot lain yang masih berisi, atau mulai dari kosong.
+            if (i === Progress.lastSlot()) {
+              const other = [0, 1, 2].find((k) => Progress.loadLocal(undefined, k));
+              if (other !== undefined) { Progress.setSlot(other); profile = Progress.loadLocal(); } else profile = Progress.newProfile('PEMAIN');
+            }
+            renderSlots();
+          }));
+          row.appendChild(btn('Batal', 'ghost', () => { slotDelete = -1; renderSlots(); }));
+        } else {
+          row.appendChild(btn('Main', 'primary', () => chooseSlot(i, p)));
+          row.appendChild(btn('Hapus', 'ghost', () => { slotDelete = i; renderSlots(); }));
+        }
+      } else {
+        info.textContent = `Slot ${i + 1} kosong`;
+        row.appendChild(info);
+        row.appendChild(btn('Buat baru', 'ghost', () => { slotEdit = i; slotDelete = -1; renderSlots(); }));
+      }
+      box.appendChild(row);
+    }
+    // Tombol besar melanjutkan slot terakhir bila ada; slot kosong dimulai dari daftar.
+    const last = Progress.loadLocal(undefined, Progress.lastSlot());
+    const start = document.getElementById('start');
+    start.textContent = last ? `Lanjutkan: ${last.nama}` : 'Mulai Petualangan';
+  }
+
+  function chooseSlot(i, p) {
+    Progress.setSlot(i);
+    profile = p;
+    Progress.saveLocal(profile);
+    syncCloud();
+    refreshAll();
+    startGame();
+  }
+
+  // Muat progres cloud slot aktif setelah game tampil supaya jaringan tidak menahan layar.
+  function syncCloud() {
+    if (!Cloud) return;
+    const uid = profile.uid;
+    Cloud.load(uid).then((data) => {
+      if (profile.uid !== uid) return null;
       const cloudProfile = Progress.normalize(data);
       const best = Progress.newer(profile, cloudProfile);
       if (best === cloudProfile && cloudProfile) {
@@ -1436,6 +1516,17 @@
       if (!shopEl.classList.contains('hidden')) renderShop();
     }).catch(() => {});
   }
+
+  // Pemain baru memilih nama dulu lewat slot; simpanan yang sudah ada langsung dipakai.
+  renderSlots();
+  baseGame = BaseSim.create('kampung', null, profile.base.built);
+  baseGame.animalReady = (kind) => Farm.animalReady(profile.base, kind);
+  baseView = BaseScene.create(canvas);
+  setMode('title');
+  titleEl.classList.remove('hidden');
+  checkRotate();
+  refreshAll();
+  if (Progress.loadLocal()) syncCloud();
   // Kanvas baru memakai font setelah termuat, jadi muat lebih awal.
   if (document.fonts && document.fonts.load) document.fonts.load('14px Kleintenna');
   requestAnimationFrame(frame);
