@@ -893,7 +893,9 @@
       else if (!jumpHeld) { p.vy *= JUMP_CUT; g.rising = false; }
     }
 
-    if (input.down) {
+    // Setelah masuk pintu, tombol bawah yang masih ditahan tidak menembus pijakan di ujung pintu.
+    if (g.doorHold && !input.down) g.doorHold = false;
+    if (input.down && !g.doorHold) {
       if (p.onGround) p.drop = DROP_T;
       else p.vy += C.GRAVITY * dt;
     }

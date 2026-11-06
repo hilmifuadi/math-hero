@@ -215,4 +215,33 @@ ok('soal cerita PR: tiap kelas punya bentuk minimal setengah jumlah peti, jawaba
   assert.notStrictEqual(Soal.cerita(3, 1, 4).teks.replace(/\d+/g, '#'), Soal.cerita(3, 1, 6).teks.replace(/\d+/g, '#'));
 });
 
+ok('pintu ajaib: banyak, beragam jenis, berpasangan benar, dan memindahkan hero', () => {
+  let total = 0;
+  const jenis = new Set();
+  for (const d of L.LEVELS) {
+    if (d.tower) continue;
+    const ins = d.map.join('').split('(').length - 1, outs = d.map.join('').split(')').length - 1;
+    assert.strictEqual(ins, outs, `level ${d.id}: mulut dan ujung sama banyak`);
+    if (d.tier >= 1) assert.ok(ins >= 2, `level ${d.id} punya minimal dua pintu (${ins})`);
+    total += ins;
+    const g = Sim.create(d);
+    for (const a of g.L.pipesIn) {
+      const b = a.to;
+      assert.ok(b, 'tiap mulut punya ujung');
+      // Ujung di atas mulut = pintu langit/atap, di samping pada baris sama = pintu tembus, di bawah = ruang rahasia.
+      jenis.add(b.foot < a.foot ? 'naik' : b.foot > a.foot ? 'turun' : 'tembus');
+    }
+  }
+  assert.ok(total >= 50, `pintu di kampanye ${total}`);
+  assert.deepStrictEqual([...jenis].sort(), ['naik', 'tembus', 'turun'], 'tiga jenis pintu ada');
+  // Masuk pintu tembus dengan tombol bawah memindahkan hero ke balik tembok.
+  const d = L.LEVELS.find((x) => { const g = Sim.create(x); return g.L.pipesIn.some((a) => a.to && a.to.foot === a.foot); });
+  const g = Sim.create(d);
+  const a = g.L.pipesIn.find((p) => p.to.foot === p.foot);
+  g.p.x = a.cx - g.p.w / 2; g.p.y = a.foot - g.p.h; g.p.vy = 0;
+  Sim.update(g, 1 / 60, {});
+  Sim.update(g, 1 / 60, { down: true });
+  assert.ok(Math.abs(g.p.x + g.p.w / 2 - a.to.cx) < 2, 'hero pindah ke ujung pintu');
+});
+
 console.log(`\n${n} tes soal, menara, dan mekanik MH4 lulus.`);
