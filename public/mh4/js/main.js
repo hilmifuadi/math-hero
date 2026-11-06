@@ -381,7 +381,7 @@
       const finale = !!(profile.best[Story.FINALE] && profile.best[Story.FINALE].done);
       text.appendChild(el('ids', owned ? w.desc : w.ultimate
         ? `${w.desc} Senjata pamungkas: ${finale ? `harga ${w.price} koin.` : 'terbuka setelah Raja Goblin kalah.'}`
-        : `Temukan di peti Misi ${locked[w.id]}.`));
+        : `Temukan di peti Misi ${(Levels.LEVELS.find((l) => String(l.id) === String(locked[w.id])) || {}).no}.`));
       const bars = el('tiles');
       for (const [lb, key] of [['Kuat', 'kuat'], ['Cepat', 'cepat'], ['Jarak', 'jarak']]) {
         const row = el('wbar');
@@ -501,7 +501,7 @@
     }
     if (level.boss) sayLong(level.bossDef.hint || `BOSS: ${level.nama}`);
     else if (level.acak) say(`${level.nama} · seed ${runSeed}`);
-    else say(`Misi ${level.id}: ${level.nama}`);
+    else say(`Misi ${level.no || level.id}: ${level.nama}`);
   }
 
   // Bekal wortel menambah HP untuk satu misi, termasuk bila misi diulang.
@@ -690,7 +690,7 @@
         const b = document.createElement('button');
         b.className = 'chip' + (def.boss ? ' boss' : '') + (best && best.done ? ' done' : '');
         b.dataset.mission = id;
-        b.textContent = def.gen ? 'Boss Acak' : def.acak ? 'Level Acak' : def.boss ? def.nama : `${id}. ${def.nama}`;
+        b.textContent = def.gen ? 'Boss Acak' : def.acak ? 'Level Acak' : def.boss ? def.nama : `${def.no || id}. ${def.nama}`;
         b.disabled = !Progress.unlocked(profile, id);
         b.addEventListener('click', () => startMission(id));
         row.appendChild(b);

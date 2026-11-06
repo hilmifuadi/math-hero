@@ -15,11 +15,14 @@
 
   // Upgrade point: satu poin tiap level baru selesai, dua untuk boss. Batas per atribut
   // lebih kecil dari total poin supaya pemain tetap memilih urutannya, dan semua bisa penuh.
+  // Sekitar 41 poin bisa didapat (24 misi x 1, 7 boss x 2, mode acak 3), jadi tiap atribut 14 tingkat.
+  // Kekuatan penuh tetap mirip versi lama: +28 HP, +42% damage, +17% kecepatan.
   const STATS = {
-    hp: { nama: 'Health', desc: '+5 HP maksimal', max: 6 },
-    atk: { nama: 'Attack', desc: '+8% damage semua senjata', max: 6 },
-    spd: { nama: 'Speed', desc: '+3% kecepatan jalan', max: 6 },
+    hp: { nama: 'Health', desc: '+2 HP maksimal', max: 14, per: 2 },
+    atk: { nama: 'Attack', desc: '+3% damage semua senjata', max: 14, per: 0.03 },
+    spd: { nama: 'Speed', desc: '+1,2% kecepatan jalan', max: 14, per: 0.012 },
   };
+  const STAT_SCALE = 2;
   const BASE_WEAPONS = ['pedang', 'blaster'];
   const BASE_GEAR = { melee: 'pedang', ranged: 'blaster' };
   const COINS = { star: 1, chest: 12, first: 10, bossFirst: 60, bossAgain: 10 };
@@ -45,7 +48,7 @@
       best: {},
       totalStars: 0,
       points: 0,
-      stats: { hp: 0, atk: 0, spd: 0 },
+      stats: { hp: 0, atk: 0, spd: 0, v: STAT_SCALE },
       weapons: BASE_WEAPONS.slice(),
       gear: Object.assign({}, BASE_GEAR),
       base: Farm.newBase(),
@@ -103,10 +106,14 @@
     } else {
       p.points = Math.max(0, Math.min(99, Math.floor(Number(raw.points)) || 0));
     }
+    // Simpanan skala lama (6 tingkat) dinaikkan supaya kekuatan pemain tidak turun.
+    const old = raw.stats && raw.stats.v !== STAT_SCALE;
     for (const id of Object.keys(STATS)) {
-      const v = raw.stats && Math.floor(Number(raw.stats[id]));
+      let v = raw.stats && Math.floor(Number(raw.stats[id]));
+      if (old && v > 0) v = Math.round(v * 14 / 6);
       p.stats[id] = v > 0 ? Math.min(STATS[id].max, v) : 0;
     }
+    p.stats.v = STAT_SCALE;
     const weapons = new Set(BASE_WEAPONS);
     if (Array.isArray(raw.weapons)) {
       for (const id of raw.weapons) if (Weapons.WEAPONS[id]) weapons.add(id);
@@ -126,10 +133,10 @@
     out.ranged = BASE_GEAR.ranged;
     if (!profile) return out;
     const stats = profile.stats || {};
-    out.maxHp += (stats.hp || 0) * 5;
-    out.meleeMul *= 1 + (stats.atk || 0) * 0.08;
-    out.rangedMul *= 1 + (stats.atk || 0) * 0.08;
-    out.speedMul *= 1 + (stats.spd || 0) * 0.03;
+    out.maxHp += (stats.hp || 0) * STATS.hp.per;
+    out.meleeMul *= 1 + (stats.atk || 0) * STATS.atk.per;
+    out.rangedMul *= 1 + (stats.atk || 0) * STATS.atk.per;
+    out.speedMul *= 1 + (stats.spd || 0) * STATS.spd.per;
     out.armor = (profile.equipped && profile.equipped.armor) || null;
     if (profile.gear) {
       out.melee = profile.gear.melee || out.melee;

@@ -221,16 +221,16 @@ ok('poin dibelanjakan ke atribut, ada batasnya, dan efeknya nyata', () => {
   const p = Progress.newProfile('A');
   assert.strictEqual(Progress.spendPoint(p, 'hp').reason, 'poin-kurang');
   p.points = 20;
-  for (let i = 0; i < 6; i++) assert.ok(Progress.spendPoint(p, 'hp').ok);
+  for (let i = 0; i < Progress.STATS.hp.max; i++) assert.ok(Progress.spendPoint(p, 'hp').ok);
   assert.strictEqual(Progress.spendPoint(p, 'hp').reason, 'sudah-penuh');
   assert.ok(Progress.spendPoint(p, 'atk').ok);
   assert.ok(Progress.spendPoint(p, 'spd').ok);
   const lo = Progress.loadout(p);
-  assert.strictEqual(lo.maxHp, 30, '6 x 5 HP');
-  assert.ok(Math.abs(lo.meleeMul - 1.08) < 1e-9 && Math.abs(lo.rangedMul - 1.08) < 1e-9);
-  assert.ok(Math.abs(lo.speedMul - 1.03) < 1e-9);
+  assert.strictEqual(lo.maxHp, 28, '14 x 2 HP');
+  assert.ok(Math.abs(lo.meleeMul - 1.03) < 1e-9 && Math.abs(lo.rangedMul - 1.03) < 1e-9);
+  assert.ok(Math.abs(lo.speedMul - 1.012) < 1e-9);
   const g = Sim.create(LEVEL, { loadout: lo });
-  assert.strictEqual(g.maxHp, 60);
+  assert.strictEqual(g.maxHp, 58);
 });
 
 ok('peti memberi senjata sekali, bisa dipakai, dan masuk simulasi', () => {
@@ -261,7 +261,7 @@ ok('simpanan lama dimigrasi: poin dihitung dari level selesai, data palsu dibuan
     uid: 'abcdef0123456789', points: 5, stats: { hp: 99, atk: -3 },
     weapons: ['palu', 'senapan-ajaib'], gear: { melee: 'tombak', ranged: 'palu' },
   });
-  assert.strictEqual(bad.stats.hp, 6, 'atribut dibatasi');
+  assert.strictEqual(bad.stats.hp, Progress.STATS.hp.max, 'atribut dibatasi');
   assert.strictEqual(bad.stats.atk, 0);
   assert.ok(bad.weapons.includes('palu') && !bad.weapons.includes('senapan-ajaib'));
   assert.strictEqual(bad.gear.melee, 'pedang', 'tombak belum dimiliki');
@@ -278,6 +278,22 @@ ok('pemasukan level lebih kecil dari ladang dan tidak bisa ditimbun', () => {
   assert.ok(res.coins <= net * 3, `satu level penuh (${res.coins}) setara paling banyak tiga petak gandum (${net} per petak)`);
   const again = Progress.gain(p, { levelId: 1, stars, chest: true, boss: false });
   assert.strictEqual(again.coins, 0, 'main ulang tanpa rekor baru tidak memberi koin');
+});
+
+ok('poin upgrade: alokasi sebanding dengan poin yang bisa didapat, simpanan lama naik skala', () => {
+  const Story = require('../public/mh4/js/base/story.js');
+  const L = require('../public/mh4/js/gen/levels.js');
+  const all = L.ALL;
+  const total = Story.ROUTE.reduce((n, id) => n + ((all.find((d) => d.id === id) || {}).boss ? 2 : 1), 0);
+  const cap = Object.values(Progress.STATS).reduce((n, s) => n + s.max, 0);
+  assert.ok(cap >= total - 3 && cap <= total + 6, `batas ${cap} sebanding dengan ${total} poin`);
+  const lama = Progress.normalize({ uid: 'abcdef0123456789', stats: { hp: 6, atk: 3, spd: 0 }, points: 0 });
+  assert.deepStrictEqual([lama.stats.hp, lama.stats.atk, lama.stats.spd], [14, 7, 0], 'skala lama dinaikkan');
+  const baru = Progress.normalize(JSON.parse(JSON.stringify(lama)));
+  assert.strictEqual(baru.stats.hp, 14, 'tidak dinaikkan dua kali');
+  // Nomor misi yang tampil berurutan 1, 2, 3, ... mengikuti cerita.
+  const nos = Story.ROUTE.map((id) => all.find((d) => d.id === id)).filter((d) => d && !d.boss && !d.acak).map((d) => d.no);
+  assert.deepStrictEqual(nos, nos.map((_, i) => i + 1));
 });
 
 console.log(`\n${n} tes progresi MH4 lulus.`);

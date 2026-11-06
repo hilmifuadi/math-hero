@@ -1126,7 +1126,7 @@
       ctx.fillStyle = '#ffe9b8';
       ctx.font = 'bold 14px Kleintenna, system-ui, sans-serif';
       ctx.textBaseline = 'middle';
-      ctx.fillText(level.boss ? level.nama : level.acak ? `Acak: ${level.nama}` : `Misi ${level.id}: ${level.nama}`, 20, 24);
+      ctx.fillText(level.boss ? level.nama : level.acak ? `Acak: ${level.nama}` : `Misi ${level.no || level.id}: ${level.nama}`, 20, 24);
 
       // HP hero: bar kayu + angka, senjata aktif, dan bintang.
       const hx = 258;
