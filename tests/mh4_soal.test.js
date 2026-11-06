@@ -194,4 +194,25 @@ ok('platform gerak membawa hero', () => {
   assert.ok(g.p.x > m.x0, 'hero ikut bergerak');
 });
 
+ok('soal cerita PR: tiap kelas punya bentuk minimal setengah jumlah peti, jawaban bulat positif', () => {
+  const Levels = require('../public/mh4/js/gen/levels.js');
+  const peti = Levels.ALL.reduce((n, d) => n + d.map.join('').split('K').length - 1, 0);
+  for (let k = 1; k <= 6; k++) {
+    const list = Soal.CERITA[k];
+    assert.ok(list.length >= Math.ceil(peti / 2), `kelas ${k}: ${list.length} bentuk untuk ${peti} peti`);
+    const teks = new Set();
+    for (let i = 0; i < list.length; i++) {
+      for (let s = 1; s <= 40; s++) {
+        const q = Soal.cerita(k, s * 97 + i, i);
+        assert.ok(Number.isInteger(q.jawaban) && q.jawaban >= 0, `kelas ${k} bentuk ${i}: jawaban ${q.jawaban}`);
+        assert.ok(q.teks.length > 20 && q.langkah.length >= 1);
+      }
+      teks.add(Soal.cerita(k, 5, i).teks.replace(/\d+/g, '#'));
+    }
+    assert.strictEqual(teks.size, list.length, `kelas ${k}: semua bentuk berbeda`);
+  }
+  // Dua peti berurutan tidak pernah mendapat bentuk yang sama.
+  assert.notStrictEqual(Soal.cerita(3, 1, 4).teks.replace(/\d+/g, '#'), Soal.cerita(3, 1, 6).teks.replace(/\d+/g, '#'));
+});
+
 console.log(`\n${n} tes soal, menara, dan mekanik MH4 lulus.`);
