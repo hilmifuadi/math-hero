@@ -145,6 +145,7 @@ di tanah datar yang jauh dari gerbang/tujuan.
 
 ## Progresi, toko, dan penyimpanan
 
+- Tiga slot pemain di layar judul, masing-masing dengan nama, progres, dan uid cloud sendiri. Slot 1 memakai kunci lama `mathHero4.save.v1`, slot 2 dan 3 memakai akhiran `.s1` dan `.s2`. Menghapus slot hanya menghapus simpanan di perangkat; dokumen cloud dan papan skor dihapus manual lewat konsol Firebase.
 - Progres disimpan di `localStorage` (`mathHero4.save.v1`) dan disalin ke **Firebase
   Firestore** koleksi `saves` bila `public/js/firebase-config.js` terisi. Tanpa konfigurasi
   atau jaringan, game tetap memakai penyimpanan lokal.

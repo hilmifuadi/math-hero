@@ -286,23 +286,47 @@
     try { return typeof localStorage !== 'undefined' ? localStorage : null; } catch (e) { return null; }
   }
 
-  function loadLocal(storage) {
+  // Tiga slot pemain seperti MH3. Slot 0 memakai kunci lama supaya simpanan yang ada tetap terbaca.
+  const SLOTS = 3, SLOT_KEY = 'mathHero4.slot';
+  let activeSlot = 0;
+  const slotKey = (slot) => (slot ? `${KEY}.s${slot}` : KEY);
+  function setSlot(slot, storage) {
+    activeSlot = Math.max(0, Math.min(SLOTS - 1, slot | 0));
+    const st = storageOr(storage);
+    try { if (st) st.setItem(SLOT_KEY, String(activeSlot)); } catch (e) { /* abaikan */ }
+    return activeSlot;
+  }
+  function lastSlot(storage) {
+    const st = storageOr(storage);
+    let v = 0;
+    try { v = Number(st && st.getItem(SLOT_KEY)) || 0; } catch (e) { v = 0; }
+    return Math.max(0, Math.min(SLOTS - 1, v));
+  }
+
+  function loadLocal(storage, slot) {
     const st = storageOr(storage);
     if (!st) return null;
+    const key = slotKey(slot === undefined ? activeSlot : slot);
     let raw = null;
-    try { raw = st.getItem(KEY); } catch (e) { return null; }
+    try { raw = st.getItem(key); } catch (e) { return null; }
     if (!raw) return null;
     const p = parse(raw);
     if (!p) {
-      try { if (!st.getItem(KEY + '.rusak')) st.setItem(KEY + '.rusak', raw); } catch (e) { /* abaikan */ }
+      try { if (!st.getItem(key + '.rusak')) st.setItem(key + '.rusak', raw); } catch (e) { /* abaikan */ }
     }
     return p;
   }
 
-  function saveLocal(profile, storage) {
+  function saveLocal(profile, storage, slot) {
     const st = storageOr(storage);
     if (!st) return false;
-    try { st.setItem(KEY, serialize(profile)); return true; } catch (e) { return false; }
+    try { st.setItem(slotKey(slot === undefined ? activeSlot : slot), serialize(profile)); return true; } catch (e) { return false; }
+  }
+
+  // Menghapus slot hanya menghapus simpanan di perangkat ini.
+  function clearSlot(slot, storage) {
+    const st = storageOr(storage);
+    try { if (st) st.removeItem(slotKey(slot)); return true; } catch (e) { return false; }
   }
 
   // Pilih data yang paling baru; seri dengan waktu sama memakai lokal agar stabil.
@@ -333,7 +357,7 @@
   }
 
   return {
-    buyWeapon, clampCoins, totalScore, KEY, VERSION, MAX_COINS, STATS, CHEST_WEAPONS, spendPoint, openChest, equipWeapon,
+    SLOTS, setSlot, lastSlot, clearSlot, buyWeapon, clampCoins, totalScore, KEY, VERSION, MAX_COINS, STATS, CHEST_WEAPONS, spendPoint, openChest, equipWeapon,
     newProfile, normalize, loadout, coinReward, gain,
     buy, equip, unlocked, serialize, parse, loadLocal, saveLocal, newer, toCloud,
   };

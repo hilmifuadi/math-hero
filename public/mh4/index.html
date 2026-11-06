@@ -210,6 +210,14 @@
   .pix.arrow.l { transform: rotate(-90deg); } .pix.arrow.r { transform: rotate(90deg); } .pix.arrow.d { transform: rotate(180deg); }
   #jump .pix.arrow { width: 36px; height: 36px; }
   .pix.sword { width: 13px; height: 36px; background-image: url('../assets/mh4/v2/ui/sword.png'); transform: rotate(45deg); }
+  /* Tiga slot pemain di layar judul. */
+  #slots { display: grid; gap: .35em; margin-top: .5em; text-align: left; }
+  .slot { display: flex; align-items: center; gap: .5em; padding: .3em .5em; background: rgba(58,33,18,.18); border: 2px solid rgba(58,33,18,.35); border-radius: 6px; }
+  .slot.on { border-color: #3f7d3a; background: rgba(120,180,90,.25); }
+  .slot .info { flex: 1; min-width: 0; font-size: .85em; line-height: 1.25; color: #2f1a0b; }
+  .slot .info b { font-size: 1.1em; }
+  .slot button { min-height: 36px; padding: 0 .7em; font: inherit; font-size: .85em; font-weight: 800; }
+  .slot input { width: 9em; min-height: 32px; padding: 0 .4em; font: inherit; font-weight: 800; color: #2f1a0b; background: rgba(255,245,215,.85); border: 2px solid #6d4322; border-radius: 6px; }
   #btnalpha::before { content: '\25A3  '; }
 </style>
 </head>
@@ -266,6 +274,7 @@
       <div class="logosub">Arka dan Kabut Kacau</div>
       <div class="sub" style="margin-bottom:.8em">Rawat ladang, hitung di gerbang, dan rebut kembali Kristal Bilangan.</div>
       <button class="primary" id="start" style="width:100%">Mulai Petualangan</button>
+      <div id="slots"></div>
       <div class="titlerow">
         <button class="ghost" id="creditbtn">Kredit</button>
         <button class="ghost" id="titleseries">Beranda Seri</button>

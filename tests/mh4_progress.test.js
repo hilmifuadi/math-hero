@@ -306,4 +306,21 @@ ok('skor total hanya dari misi cerita, mode acak tidak ikut', () => {
   assert.strictEqual(p.points, 3, 'poin hanya dari misi cerita');
 });
 
+ok('tiga slot pemain tersimpan terpisah, slot 0 memakai kunci lama, dan bisa dihapus', () => {
+  const mem = {};
+  const st = { getItem: (k) => (k in mem ? mem[k] : null), setItem: (k, v) => { mem[k] = String(v); }, removeItem: (k) => { delete mem[k]; } };
+  const a = Progress.newProfile('ALYA'), b = Progress.newProfile('BIMA');
+  assert.ok(Progress.saveLocal(a, st, 0) && Progress.saveLocal(b, st, 2));
+  assert.ok(Progress.KEY in mem, 'slot 0 memakai kunci lama');
+  assert.strictEqual(Progress.loadLocal(st, 0).nama, 'ALYA');
+  assert.strictEqual(Progress.loadLocal(st, 1), null);
+  assert.strictEqual(Progress.loadLocal(st, 2).nama, 'BIMA');
+  Progress.setSlot(2, st);
+  assert.strictEqual(Progress.lastSlot(st), 2);
+  assert.ok(Progress.clearSlot(2, st));
+  assert.strictEqual(Progress.loadLocal(st, 2), null);
+  assert.strictEqual(Progress.loadLocal(st, 0).nama, 'ALYA', 'slot lain tidak terhapus');
+  Progress.setSlot(0, st);
+});
+
 console.log(`\n${n} tes progresi MH4 lulus.`);
