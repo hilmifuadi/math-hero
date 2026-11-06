@@ -284,7 +284,7 @@ ok('poin upgrade: alokasi sebanding dengan poin yang bisa didapat, simpanan lama
   const Story = require('../public/mh4/js/base/story.js');
   const L = require('../public/mh4/js/gen/levels.js');
   const all = L.ALL;
-  const total = Story.ROUTE.reduce((n, id) => n + ((all.find((d) => d.id === id) || {}).boss ? 2 : 1), 0);
+  const total = Story.ROUTE.filter((id) => !Story.ACAK.includes(id)).reduce((n, id) => n + ((all.find((d) => d.id === id) || {}).boss ? 2 : 1), 0);
   const cap = Object.values(Progress.STATS).reduce((n, s) => n + s.max, 0);
   assert.ok(cap >= total - 3 && cap <= total + 6, `batas ${cap} sebanding dengan ${total} poin`);
   const lama = Progress.normalize({ uid: 'abcdef0123456789', stats: { hp: 6, atk: 3, spd: 0 }, points: 0 });
@@ -303,6 +303,7 @@ ok('skor total hanya dari misi cerita, mode acak tidak ikut', () => {
   Progress.gain(p, { levelId: 35, score: 4000 });
   Progress.gain(p, { levelId: 17, score: 7000, boss: true });
   assert.strictEqual(Progress.totalScore(p), 1400);
+  assert.strictEqual(p.points, 3, 'poin hanya dari misi cerita');
 });
 
 console.log(`\n${n} tes progresi MH4 lulus.`);
