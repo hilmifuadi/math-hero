@@ -51,6 +51,77 @@
   };
   const SET_ORDER = ['bridge', 'spring', 'lift', 'saw', 'tunnel', 'dash'];
 
+  // Pintu ajaib jenis baru. Semua dua arah dan masuk dengan tombol bawah.
+  const DOORS = {
+    // Pintu Langit: dari tanah ke pulau awan berbintang yang terlalu tinggi untuk dilompati.
+    sky(rows, c, r) {
+      rows[r][c + 1] = '(';
+      for (let k = 2; k <= 8; k++) rows[r - 7][c + k] = '=';
+      rows[r - 8][c + 5] = ')';
+      for (const k of [3, 7]) rows[r - 8][c + k] = '*';
+      for (const k of [4, 6]) rows[r - 9][c + k] = '*';
+    },
+    // Pintu Tembus: tembok setinggi delapan petak hanya bisa dilewati lewat pintu.
+    wall(rows, c, r) {
+      for (let y = r - 7; y <= r; y++) { rows[y][c + 5] = '#'; rows[y][c + 6] = '#'; }
+      rows[r][c + 2] = '(';
+      rows[r][c + 9] = ')';
+      rows[r - 3][c + 2] = '*';
+    },
+    // Pintu Atap: dari tanah naik ke atas tembok yang lebar, lalu turun di sisi lain berbonus bintang.
+    roof(rows, c, r) {
+      for (let y = r - 6; y <= r; y++) for (let k = 4; k <= 9; k++) rows[y][c + k] = '#';
+      rows[r][c + 2] = '(';
+      rows[r - 7][c + 6] = ')';
+      for (const k of [5, 8]) rows[r - 7][c + k] = '*';
+      rows[r - 9][c + 7] = '*';
+    },
+  };
+  const DOOR_SIZE = { sky: [10, 10], wall: [12, 9], roof: [12, 10] };
+  // Sel yang dipakai tiap rangkaian: kolom yang butuh tanah, dan kotak [dx0, dx1, dy0, dy1] yang harus kosong.
+  const DOOR_NEED = {
+    sky: { ground: [0, 1, 2], free: [[0, 2, -2, 0], [2, 8, -10, -6]] },
+    wall: { ground: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], free: [[1, 10, -2, 0], [4, 7, -8, -3]] },
+    roof: { ground: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], free: [[1, 10, -2, 0], [3, 10, -10, -3]] },
+  };
+
+  // Menambah pintu ajaib di tanah lapang, berjauhan dari gerbang, kunci, dan rangkaian lain.
+  function addDoors(def, p) {
+    const rows = def.map.map((r) => r.split(''));
+    const H = rows.length, W = rows[0].length;
+    const busy = [];
+    for (let c = 0; c < W; c++) if (rows.some((row) => 'GLSEK()><s'.includes(row[c]))) busy.push(c);
+    const want = p.tier < 1 ? ['sky'] : ['wall', 'sky', 'roof', 'sky'];
+    const placed = [];
+    const freeArea = (c, r, kind) => {
+      const need = DOOR_NEED[kind];
+      if (r - 11 < 1) return false;
+      for (const k of need.ground) if (rows[r + 1][c + k] !== '#') return false;
+      for (const [x0, x1, y0, y1] of need.free) {
+        for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) if (!'.*'.includes(rows[r + y][c + x])) return false;
+      }
+      return true;
+    };
+    for (const kind of want) {
+      const [w, h] = DOOR_SIZE[kind];
+      const off = (p.seed * 7 + kind.length * 13) % 9;
+      for (let c = 18 + off; c < W - 24 - w; c += 2) {
+        if (busy.some((b) => b >= c - 6 && b <= c + w + 6) || placed.some((x) => Math.abs(x - c) < 20)) continue;
+        let ok = false, r = -1;
+        for (let y = H - 2; y > h && !ok; y--) {
+          if (rows[y + 1][c] !== '#' || !'.*'.includes(rows[y][c])) continue;
+          if (freeArea(c, y, kind)) { ok = true; r = y; }
+        }
+        if (!ok) continue;
+        DOORS[kind](rows, c, r);
+        placed.push(c);
+        for (let k = 0; k < w; k++) busy.push(c + k);
+        break;
+      }
+    }
+    return Object.assign({}, def, { map: rows.map((r) => r.join('')) });
+  }
+
   const PLAN = [
     { id: 1, nama: 'Langkah Pertama', tema: 'green', tier: 0, seed: 3901, sec: 45 },
     { id: 2, nama: 'Pipa Berkarat', tema: 'industrial', tier: 1, seed: 4120, sec: 50 },
@@ -137,7 +208,7 @@
       par: p.sec * 3,
       map: def.map, inside: def.inside, rooms: def.rooms, checkpoints: def.checkpoints,
     };
-    return addEnemies(addMech(addMiniBoss(addGates(level), p.id), p), p.tier);
+    return addEnemies(addDoors(addMech(addMiniBoss(addGates(level), p.id), p), p), p.tier);
   });
   const LEVELS = REGULAR.concat(TOWERS.map((t) => buildTower(t)));
 
@@ -455,11 +526,19 @@
       }
       return true;
     };
+    // Pintu ajaib: mulut dan ujung berpasangan menurut urutan kolom, sama seperti Mech.linkDoors.
+    const ins = [], outs = [];
+    map.forEach((row, r) => { for (let c = 0; c < W; c++) { if (row[c] === '(') ins.push({ c, r }); else if (row[c] === ')') outs.push({ c, r }); } });
+    ins.sort((a, b) => a.c - b.c); outs.sort((a, b) => a.c - b.c);
+    const link = new Map();
+    for (let i = 0; i < Math.min(ins.length, outs.length); i++) { link.set(key(ins[i].c, ins[i].r), outs[i]); link.set(key(outs[i].c, outs[i].r), ins[i]); }
     const seen = new Set([key(start.c, start.r)]);
     const queue = [start];
     while (queue.length) {
       const { c, r } = queue.pop();
       const ch = map[r][c];
+      const via = link.get(key(c, r));
+      if (via && !seen.has(key(via.c, via.r))) { seen.add(key(via.c, via.r)); queue.push(via); }
       const upMax = ch === 's' ? SPRING_UP : JUMP_UP;
       const reachUp = (up) => JUMP_ACROSS - Math.floor(Math.max(0, up) / 2);
       for (let r2 = Math.max(1, r - upMax); r2 < H - 1; r2++) {
@@ -509,7 +588,8 @@
       map: def.map, inside: def.inside, rooms: def.rooms, checkpoints: def.checkpoints,
     };
     const gated = addGates(level);
-    return addEnemies(addMech(wantMini ? addMiniBoss(gated, miniId) : gated, { id: seed % 6, seed, tier }), tier);
+    const pm = { id: seed % 6, seed, tier };
+    return addEnemies(addDoors(addMech(wantMini ? addMiniBoss(gated, miniId) : gated, pm), pm), tier);
   }
 
   // Seed menentukan tema, bentuk, dan isi. Tingkat dan kekuatan mengikuti perkembangan pemain.

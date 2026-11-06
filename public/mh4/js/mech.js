@@ -36,14 +36,12 @@
     else if (ch === 'L') { L.tiles[r * L.cols + c] = 1; L.locks.push({ c, r }); }
   }
 
-  // Setiap mulut pintu berpasangan dengan ujung terdekat menurut kolom.
+  // Tiap rangkaian pintu menaruh satu mulut dan satu ujung tanpa tumpang tindih dengan rangkaian lain,
+  // jadi mulut ke-i (urut kolom) berpasangan dengan ujung ke-i. Ini juga benar bila ujungnya jauh.
   function linkDoors(L) {
-    const free = L.pipesOut.slice();
-    for (const a of L.pipesIn) {
-      let best = -1, bestD = 1e9;
-      free.forEach((b, i) => { const d = Math.abs(b.c - a.c); if (d < bestD) { bestD = d; best = i; } });
-      if (best < 0) continue;
-      const b = free.splice(best, 1)[0];
+    const ins = L.pipesIn.slice().sort((a, b) => a.c - b.c), outs = L.pipesOut.slice().sort((a, b) => a.c - b.c);
+    for (let i = 0; i < Math.min(ins.length, outs.length); i++) {
+      const a = ins[i], b = outs[i];
       a.to = b; b.to = a;
       L.doors.push(a, b);
     }
@@ -107,7 +105,7 @@
         g.nearDoor = d;
         if (input && input.down && d.to) {
           p.x = d.to.cx - p.w / 2; p.y = d.to.foot - p.h; p.vx = p.vy = 0; p.drop = 0;
-          g.pipeCd = PIPE_CD;
+          g.pipeCd = PIPE_CD; g.doorHold = true;
           g.nearDoor = null;
           g.events.push({ type: 'pipe', x: d.to.cx, y: d.to.foot });
           break;
