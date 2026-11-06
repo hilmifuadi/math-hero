@@ -139,8 +139,9 @@
       Promise.all([
         load('assets/game/tileset.png'), load('assets/game/hero1_run.png'), load('assets/game/hero2_run.png'), load('assets/game/hero3_run.png'),
         load('mh2/assets/sprites.png'), fetch('mh2/assets/sprites.json').then((r) => r.json()).catch(() => ({})),
-        load('assets/mh4/v2/hero/player.png'), load('assets/mh4/v2/boss/labu/idle.png'),
-      ]).then(([tiles, h1, h2, h3, atlas, meta, arka, labu]) => {
+        load('assets/mh4/v2/hero/player.png'),
+        ...['Grass_Middle', 'Path_Tile', 'Fences', 'Cow', 'Sheep', 'Chicken', 'titu', 'Outdoor_Decor_Free', 'House_1_Wood_Base_Blue'].map((n) => load('assets/mh4/v2/base/' + n + '.png')),
+      ]).then(([tiles, h1, h2, h3, atlas, meta, arka, grass, path, fence, cow, sheep, chicken, titu, decor, house]) => {
         const c1 = document.getElementById('cv1').getContext('2d'), c2 = document.getElementById('cv2').getContext('2d'), c3 = document.getElementById('cv3').getContext('2d');
         const c4 = document.getElementById('cv4').getContext('2d');
         [c1, c2, c3, c4].forEach((c) => { c.imageSmoothingEnabled = false; });
@@ -159,6 +160,39 @@
           const m = meta[name]; if (!m || !atlas) return;
           f = Math.floor(f) % m.n;
           c.drawImage(atlas, m.x + f * m.w, m.y, m.w, m.h, Math.round(x - m.w * s / 2), Math.round(y - m.h * s), m.w * s, m.h * s);
+        }
+        // Kartu MH4: pemandangan kampung top down pada skala 2, gambar dari aset markas.
+        const ok = (im) => im && im.naturalWidth;
+        function walker(c, im, frame, row, x, y, s, flip) {
+          if (!ok(im)) return;
+          c.save(); c.translate(Math.round(x), Math.round(y)); if (flip) c.scale(-1, 1);
+          c.drawImage(im, frame * 32, row * 32, 32, 32, -16 * s, -26 * s, 32 * s, 32 * s);
+          c.restore();
+        }
+        function drawKampung(c, t) {
+          c.fillStyle = '#6bbf59'; c.fillRect(0, 0, 320, 160);
+          if (ok(grass)) for (let y = 0; y < 160; y += 32) for (let x = 0; x < 320; x += 32) c.drawImage(grass, x, y, 32, 32);
+          // Jalan tanah melintang di bawah.
+          if (ok(path)) for (let x = 0; x < 320; x += 32) { c.drawImage(path, 16, 0, 16, 16, x, 112, 32, 32); c.drawImage(path, 16, 32, 16, 16, x, 144, 32, 32); }
+          // Rumah Arka di kiri atas, separuh terpotong.
+          if (ok(house)) c.drawImage(house, -20, -110, 96 * 1.5, 128 * 1.5);
+          // Bunga di depan rumah.
+          if (ok(decor)) for (const [x, sx, sy] of [[10, 0, 128], [30, 16, 144], [58, 0, 160], [82, 16, 176]]) c.drawImage(decor, sx, sy, 16, 16, x, 82, 24, 24);
+          // Pagar kandang di kanan, lalu hewan yang mondar-mandir.
+          if (ok(fence)) for (let x = 132; x < 320; x += 24) { c.drawImage(fence, 32, 0, 16, 16, x, 18, 24, 24); c.drawImage(fence, 32, 0, 16, 16, x, 92, 24, 24); }
+          const pace = (spd, a, b, ph) => { const span = b - a, p = (t * spd + ph) % (span * 2); return p < span ? [a + p, false] : [b - (p - span), true]; };
+          const animals = [[cow, 22, 150, 230, 0, 72], [sheep, 16, 200, 300, 40, 64], [chicken, 30, 140, 210, 15, 98], [chicken, 26, 230, 300, 60, 100]];
+          for (const [im, spd, a, b, ph, y] of animals) {
+            const [x, back] = pace(spd, a, b, ph);
+            // Gambar hewan menghadap kiri: dibalik saat berjalan ke kanan.
+            walker(c, im, Math.floor(t * 4) % 2, 1, x, y, 2, !back);
+          }
+          // Arka berjalan di jalan, Titu mengikuti di belakangnya.
+          const [ax, left] = pace(34, 30, 280, 0);
+          const fw = 32;
+          if (ok(arka)) { c.save(); c.translate(Math.round(ax), 148); if (left) c.scale(-1, 1); c.drawImage(arka, (Math.floor(t * 10) % 6) * fw, 4 * fw, fw, fw, -32, -52, 64, 64); c.restore(); }
+          const tx = left ? ax + 34 : ax - 34;
+          if (ok(titu)) walker(c, titu, Math.floor(t * 8) % 3, left ? 1 : 2, tx, 152, 1.6, false);
         }
         function frame(now) {
           const t = now / 1000;
@@ -187,13 +221,8 @@
           ground(c3, t * 70, 320, 160, 2);
           for (let i = 0; i < 3; i++) { const x = ((i * 130 - t * 70) % 390 + 390) % 390 - 40; c3.fillStyle = '#ffd54a'; c3.fillRect(x, 96 + Math.sin(t * 5 + i) * 3, 8, 8); c3.fillStyle = '#e8ecf5'; c3.beginPath(); c3.moveTo(x + 40, 120); c3.lineTo(x + 48, 104); c3.lineTo(x + 56, 120); c3.fill(); }
           ['pinki_run', 'owi_run', 'dudu_run'].forEach((n, i) => atlasFrame(c3, n, t * 12 + i, 90 + i * 70, 120, 1.7));
-          // Seri 4: kabut senja, Labu Ajaib melayang, dan Arka bersiap di depannya.
-          const g4 = c4.createLinearGradient(0, 0, 0, 160); g4.addColorStop(0, '#3a2f5c'); g4.addColorStop(1, '#e8a56b');
-          c4.fillStyle = g4; c4.fillRect(0, 0, 320, 160);
-          clouds(c4, t, 320, 'rgba(255,255,255,0.28)');
-          ground(c4, 0, 320, 160, 0);
-          if (arka) { const fw = arka.width / 6; c4.drawImage(arka, (Math.floor(t * 6) % 6) * fw, 0, fw, fw, 40, 56, 72, 72); }
-          if (labu) c4.drawImage(labu, 0, 0, 32, 32, 190, 24 + Math.round(Math.sin(t * 2) * 5), 96, 96);
+          // Seri 4: Arka berjalan di Kampung Lumbung bersama Titu, di depan kandang sapi, domba, dan ayam.
+          drawKampung(c4, t);
           if (!reduce) requestAnimationFrame(frame);
         }
         requestAnimationFrame(frame);
