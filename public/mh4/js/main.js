@@ -1041,7 +1041,9 @@
     prShow();
   }
   function openPr(done) {
-    prQ = window.MH4.soal.cerita(profile.kelas || 1, (level.seed * 211 + profile.base.day * 3571 + 7) >>> 0);
+    // Bentuk soal bergilir menurut urutan misi dan hari, jadi peti berurutan tidak mengulang bentuk yang sama.
+    const urut = Math.max(0, Story.ROUTE.indexOf(level.id)) + profile.base.day;
+    prQ = window.MH4.soal.cerita(profile.kelas || 1, (level.seed * 211 + profile.base.day * 3571 + 7) >>> 0, urut);
     prVal = ''; prWrong = 0; prDone = done;
     document.getElementById('prtext').textContent = prQ.teks;
     document.getElementById('prhint').textContent = '';
