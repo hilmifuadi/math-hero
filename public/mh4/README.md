@@ -37,8 +37,8 @@ Logika ada di `js/base/`, sumber aset di `assets/mh4/v2/SUMBER.md`.
 - Enam senjata: Pedang, Tombak, Palu (dekat), Blaster, Pelontar, Pemantul (jauh). Hero membawa
   satu dekat dan satu jauh. Senjata baru ada di peti level 2, 4, 7, dan 10, dan bisa diganti di
   `Toko & Upgrade`. Hanya damage yang naik mengikuti `power` level.
-- Upgrade point: +1 tiap level baru, +2 tiap boss. Health +5 HP, Attack +8%, Speed +3% per
-  tingkat, maksimal 6 tingkat tiap atribut.
+- Upgrade point: +1 tiap level baru, +2 tiap boss (sekitar 41 poin). Health +2 HP, Attack +3%,
+  Speed +1,2% per tingkat, maksimal 14 tingkat tiap atribut. Nomor misi yang tampil mengikuti urutan cerita.
 - `BOSS` berisi **Penjaga Mesin** (320 HP): kristal di kepala terbuka saat recovery dan harus
   diserang sambil melompat. Fase 2 pada 50% menambah batu jatuh dan semburan lantai.
 - `BOSS 2` berisi **Raja Bandit** (380 HP): serudukannya berhenti di dinding dan membuatnya
