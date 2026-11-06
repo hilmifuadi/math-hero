@@ -400,6 +400,16 @@ section('Medieval UI', 'MediavelFree.png', (UI) => {
   save(crop(ui, 2, 98, 61, 12), 'ui/bar.png');
   const icons = { pause: [145, 1], plus: [81, 17], check: [145, 17], close: [81, 33], ask: [81, 49], coin: [145, 49] };
   for (const [id, [x, y]] of Object.entries(icons)) save(crop(ui, x, y, 14, 14), `ui/${id}.png`);
+  // Tombol sentuh: pedang dari lembar UI, dan panah piksel krem bergaris gelap.
+  save(crop(ui, 244, 0, 9, 25), 'ui/sword.png');
+  const ARROW = ['....#....', '...#o#...', '..#ooo#..', '.#ooooo#.', '#ooooooo#', '###ooo###', '..#ooo#..', '..#ooo#..', '..#####..'];
+  const arrow = P.blank(9, 9);
+  ARROW.forEach((row, y) => [...row].forEach((ch, x) => {
+    if (ch === '.') return;
+    const c = ch === '#' ? [47, 26, 11] : [255, 243, 214], i = (y * 9 + x) * 4;
+    arrow.data[i] = c[0]; arrow.data[i + 1] = c[1]; arrow.data[i + 2] = c[2]; arrow.data[i + 3] = 255;
+  }));
+  save(arrow, 'ui/arrow.png');
 });
 
 console.log('selesai:', OUT);
