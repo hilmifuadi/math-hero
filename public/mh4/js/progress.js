@@ -15,7 +15,7 @@
 
   // Upgrade point: satu poin tiap level baru selesai, dua untuk boss. Batas per atribut
   // lebih kecil dari total poin supaya pemain tetap memilih urutannya, dan semua bisa penuh.
-  // Sekitar 41 poin bisa didapat (24 misi x 1, 7 boss x 2, mode acak 3), jadi tiap atribut 14 tingkat.
+  // 38 poin bisa didapat dari cerita (24 misi x 1, 7 boss x 2), jadi tiap atribut 14 tingkat.
   // Kekuatan penuh tetap mirip versi lama: +28 HP, +42% damage, +17% kecepatan.
   const STATS = {
     hp: { nama: 'Health', desc: '+2 HP maksimal', max: 14, per: 2 },
@@ -102,7 +102,7 @@
     p.totalStars = Object.values(p.best).reduce((n, b) => n + b.stars, 0);
     // Simpanan lama belum punya poin: hitung dari level yang sudah selesai agar tidak rugi.
     if (raw.points === undefined) {
-      p.points = Object.entries(p.best).reduce((n, [, b]) => n + (b.done ? (b.boss ? 2 : 1) : 0), 0);
+      p.points = Object.entries(p.best).reduce((n, [id, b]) => n + (b.done && !Story.ACAK.includes(Number(id)) ? (b.boss ? 2 : 1) : 0), 0);
     } else {
       p.points = Math.max(0, Math.min(99, Math.floor(Number(raw.points)) || 0));
     }
@@ -187,7 +187,8 @@
     profile.totalStars = Object.values(profile.best).reduce((n, b) => n + b.stars, 0);
     const coins = coinReward(profile, { stars: result.stars || 0, chest: result.chest, boss: result.boss }, first, prev);
     profile.koin = clampCoins(profile.koin + coins);
-    const points = first ? (result.boss ? 2 : 1) : 0;
+    // Poin upgrade hanya dari misi cerita; mode acak hanya memberi koin.
+    const points = first && !Story.ACAK.includes(id) ? (result.boss ? 2 : 1) : 0;
     profile.points = (profile.points || 0) + points;
     profile.updatedAt = now || Date.now();
     return { first, coins, points, score, bestScore: Math.max(prevScore, score), newBest: score > prevScore, total: totalScore(profile) };
