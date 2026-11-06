@@ -51,21 +51,21 @@
     },
     // Senjata pamungkas: dibeli mahal setelah tamat. Damage biasa, keunggulannya ada di pola serang.
     'pedang-angin': {
-      id: 'pedang-angin', nama: 'Pedang Angin', type: 'melee', tierBase: 0.18, ultimate: true, price: 5000, hue: 150,
+      id: 'pedang-angin', nama: 'Pedang Angin', type: 'melee', tierBase: 0.18, ultimate: true, price: 2000, hue: 150,
       desc: 'Tebasan angin ke depan dan belakang sekaligus.', tag: 'Tebasan ganda', bars: { kuat: 3, cepat: 4, jarak: 3 },
       damage: 15, cooldown: 0.45, windup: 0.05, active: 0.16, recovery: 0.16,
       range: 32, height: 40, reachY: 20, knockback: 110, color: '#bff5ff', both: true,
       icon: [0, 0, 7, 19],
     },
     bumerang: {
-      id: 'bumerang', nama: 'Bumerang', type: 'ranged', tierBase: 0.12, ultimate: true, price: 5000, hue: 40,
+      id: 'bumerang', nama: 'Bumerang', type: 'ranged', tierBase: 0.12, ultimate: true, price: 2000, hue: 40,
       desc: 'Terbang menembus musuh lalu kembali ke tangan, jadi bisa mengenai dua kali.', tag: 'Pergi pulang', bars: { kuat: 2, cepat: 3, jarak: 4 },
       damage: 9, cooldown: 0.75, windup: 0.06, active: 0.1, recovery: 0.2,
       speed: 190, gravity: 0, lift: 0, life: 1.4, knockback: 50, color: '#ffcf6b',
       pierce: true, boomerang: true, projectile: { w: 10, h: 10 }, icon: [80, 0, 17, 11],
     },
     'panah-cahaya': {
-      id: 'panah-cahaya', nama: 'Panah Cahaya', type: 'ranged', tierBase: 0.12, ultimate: true, price: 5000, hue: 60,
+      id: 'panah-cahaya', nama: 'Panah Cahaya', type: 'ranged', tierBase: 0.12, ultimate: true, price: 2000, hue: 60,
       desc: 'Panah cahaya lurus yang menembus semua musuh di jalurnya.', tag: 'Tembus', bars: { kuat: 2, cepat: 3, jarak: 5 },
       damage: 10, cooldown: 0.62, windup: 0.06, active: 0.1, recovery: 0.2,
       speed: 300, gravity: 0, lift: 0, life: 1.3, knockback: 45, color: '#fff6a8',
