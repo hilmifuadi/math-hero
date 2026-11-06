@@ -1322,8 +1322,8 @@
         ctx.font = 'bold 19px Kleintenna, system-ui, sans-serif';
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         const w = Math.min(VW - 120, ctx.measureText(q.teks).width + 56);
-        // Di bawah tengah: tidak menutupi balok di atas, dan tidak tertimpa tombol sentuh di sudut.
-        const x = (VW - w) / 2, py = VH - 78;
+        // Di atas (bawah HUD): tidak tertimpa tombol sentuh di bagian bawah layar HP.
+        const x = (VW - w) / 2, py = game.boss && !game.boss.defeated ? 92 : 64;
         ctx.fillStyle = 'rgba(58,33,18,.95)'; ctx.fillRect(x, py, w, 32);
         ctx.strokeStyle = '#d9a35a'; ctx.lineWidth = 2; ctx.strokeRect(x + 1, py + 1, w - 2, 30);
         ctx.fillStyle = '#fff3d6'; ctx.fillText(q.teks, x + w / 2, py + 17, w - 16);
@@ -1335,7 +1335,7 @@
         ctx.restore();
       }
       if (ui.toast) {
-        const ty = game.boss && !game.boss.defeated ? 76 : 50;
+        const ty = game.quiz ? (game.boss && !game.boss.defeated ? 150 : 122) : (game.boss && !game.boss.defeated ? 76 : 50);
         ctx.save();
         ctx.globalAlpha = Math.min(1, ui.toastT || 1);
         ctx.fillStyle = 'rgba(0,0,0,.72)';

@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#08120d">
+<link rel="manifest" href="manifest.webmanifest">
 <title>Math Hero 4: Arka dan Kabut Kacau</title>
 <style>
   :root { color-scheme: dark; }
@@ -13,8 +18,11 @@
   @font-face { font-family: 'Kleintenna'; src: url('../assets/kleintenna-font/Kleintenna-Bow.ttf') format('truetype'); font-display: swap; }
   button { font-family: inherit; }
   #wrap.basemode #attack, #wrap.basemode #swap { display: none; }
-  #wrap { --u: calc(min(100vw, 177.78vh) / 640); position: relative; width: min(100vw, 177.78vh); aspect-ratio: 16 / 9; background: #0d1b13; border-radius: 10px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.55); font-size: clamp(15px, calc(var(--u) * 10), 28px); }
+  #wrap { --u: calc(min(100vw, 177.78dvh) / 640); position: relative; width: min(100vw, 177.78vh); width: min(100vw, 177.78dvh); aspect-ratio: 16 / 9; background: #0d1b13; border-radius: 10px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.55); font-size: clamp(15px, calc(var(--u) * 10), 28px); }
   canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; image-rendering: crisp-edges; }
+  #fsbtn { position: absolute; top: calc(var(--u) * 42); right: calc(var(--u) * 100); z-index: 8; min-width: 44px; min-height: 44px; border: 1px solid rgba(255,255,255,.35); background: rgba(8,20,14,.72); color: #fff; border-radius: 10px; font-size: 1.1em; font-weight: 800; cursor: pointer; }
+  #fsbtn.hidden { display: none; }
+  #wrap.titlemode #fsbtn { display: none; }
   #menubtn { position: absolute; top: calc(var(--u) * 42); right: calc(var(--u) * 10); z-index: 8; min-width: 44px; min-height: 44px; border: 1px solid rgba(255,255,255,.35); background: rgba(8,20,14,.72); color: #fff; border-radius: 10px; padding: .3em .7em; font-size: 1em; font-weight: 800; cursor: pointer; }
   .chips { display: grid; grid-template-columns: repeat(8, 1fr); gap: .4em; }
   .chip { min-height: 44px; border: 1px solid rgba(255,255,255,.18); background: rgba(8,20,14,.72); color: #d9f3e2; border-radius: 8px; padding: .3em .4em; font-size: .95em; font-weight: 700; cursor: pointer; }
@@ -194,6 +202,8 @@
 
   <button id="menubtn" aria-label="Buka menu">&#9776; Menu</button>
 
+  <button id="fsbtn" aria-label="Layar penuh">&#9974;</button>
+
   <div id="touch">
     <div class="pad" id="dpad">
       <div class="btn" id="left">◀</div>
@@ -361,6 +371,21 @@
 <script src="../shared/js/credits.js"></script>
 <script src="js/tutor.js"></script>
 <script src="js/soal.js"></script>
+<script>
+(function () {
+  var b = document.getElementById('fsbtn'), el = document.documentElement;
+  var req = el.requestFullscreen || el.webkitRequestFullscreen;
+  var standalone = matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone;
+  if (!req || standalone) { b.classList.add('hidden'); return; }
+  function isFs() { return document.fullscreenElement || document.webkitFullscreenElement; }
+  b.addEventListener('click', function () {
+    if (isFs()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
+    var p = req.call(el);
+    var lock = function () { try { screen.orientation.lock('landscape').catch(function () {}); } catch (e) {} };
+    if (p && p.then) p.then(lock, function () {}); else lock();
+  });
+})();
+</script>
 <script src="js/mech.js"></script>
 <script src="js/base/talk.js"></script>
 <script src="js/base/scene.js"></script>
