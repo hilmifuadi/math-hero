@@ -67,7 +67,7 @@ Logika ada di `js/base/`, sumber aset di `assets/mh4/v2/SUMBER.md`.
 
 Skor level berasal dari soal gerbang (benar +100 sampai +200 menurut kelas soal, salah -30), PR, musuh yang
 kalah, dan bonus waktu 1000 sampai 100. Mengulang misi hanya mengganti skor bila lebih baik, dan jumlah skor
-terbaik semua misi dikirim ke papan `mh4`. Membuka peti memunculkan PR soal cerita yang diketik (+300, -50 tiap
+terbaik semua misi cerita (tanpa Level Acak dan Boss Acak) dikirim ke papan `mh4`. Membuka peti memunculkan PR soal cerita yang diketik (+300, -50 tiap
 salah, minimal +100, boleh dilewati). Balok soal hanya bisa dipilih dengan senjata dekat atau tombol angka.
 Pintu ajaib masuk dengan tombol bawah dan dua arah. Ada empat jenis: ruang rahasia di bawah tanah, Pintu Langit ke pulau awan berbintang, Pintu Tembus melewati tembok setinggi delapan petak, dan Pintu Atap ke puncak tembok lebar. `addDoors` di `gen/levels.js` menaruh dua sampai empat pintu tiap level, dan `reachable()` ikut memperhitungkannya.
 

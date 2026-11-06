@@ -296,4 +296,13 @@ ok('poin upgrade: alokasi sebanding dengan poin yang bisa didapat, simpanan lama
   assert.deepStrictEqual(nos, nos.map((_, i) => i + 1));
 });
 
+ok('skor total hanya dari misi cerita, mode acak tidak ikut', () => {
+  const p = Progress.newProfile('A');
+  Progress.gain(p, { levelId: 1, score: 500 });
+  Progress.gain(p, { levelId: 15, score: 900, boss: true });
+  Progress.gain(p, { levelId: 35, score: 4000 });
+  Progress.gain(p, { levelId: 17, score: 7000, boss: true });
+  assert.strictEqual(Progress.totalScore(p), 1400);
+});
+
 console.log(`\n${n} tes progresi MH4 lulus.`);
