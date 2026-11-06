@@ -530,6 +530,7 @@
   };
 
   function showLine() {
+    lineAt = Date.now();
     const [who, text, choices] = dialogQueue[0];
     document.getElementById('dname').textContent = who || '';
     document.getElementById('dtext').textContent = text;
@@ -547,7 +548,7 @@
         b.className = 'choice';
         b.textContent = c.label;
         b.disabled = !!c.disabled;
-        b.addEventListener('click', (e) => { e.stopPropagation(); closeDialog(); if (c.run) c.run(); });
+        b.addEventListener('click', (e) => { e.stopPropagation(); if (tooSoon()) return; closeDialog(); if (c.run) c.run(); });
         box.appendChild(b);
       }
     }
@@ -572,6 +573,13 @@
     syncPause();
     showLine();
   }
+  // Sentuhan yang membuka dialog bisa mendarat di kotak dialog sebagai klik. Klik sesaat setelah
+  // dialog atau baris baru muncul diabaikan, supaya baris pertama tidak terlewat.
+  let lineAt = 0;
+  // Hanya berlaku untuk sentuhan; klik tetikus dan papan ketik tetap langsung.
+  let touchAt = 0;
+  if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch') touchAt = Date.now(); }, true);
+  const tooSoon = () => Date.now() - lineAt < 350 && Date.now() - touchAt < 700;
 
   function nextLine() {
     if (dialogHasChoices) return;
@@ -1351,7 +1359,7 @@
   document.getElementById('titleseries').addEventListener('click', leaveToSeries);
   document.getElementById('serieslink').addEventListener('click', leaveToSeries);
   document.getElementById('home').addEventListener('click', returnHome);
-  document.getElementById('dialog').addEventListener('click', nextLine);
+  document.getElementById('dialog').addEventListener('click', () => { if (!tooSoon()) nextLine(); });
   document.getElementById('boardclose').addEventListener('click', () => { boardEl.classList.add('hidden'); syncPause(); });
   document.getElementById('nwuse').addEventListener('click', () => closeFoundWeapon(true));
   document.getElementById('nwkeep').addEventListener('click', () => closeFoundWeapon(false));
