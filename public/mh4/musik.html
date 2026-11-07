@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="id"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dengar musik MH4</title>
+<body style="font-family:sans-serif;max-width:480px;margin:2rem auto;padding:0 1rem">
+<h1>Musik Math Hero 4</h1>
+<p>Pilih lagu lalu tekan Putar. Lagu berulang terus sampai Berhenti.</p>
+<select id="t"></select> <button id="p">Putar</button> <button id="s">Berhenti</button>
+<script src="js/audio.js"></script>
+<script>
+const A = MH4.audio, sel = document.getElementById('t');
+Object.keys(A.TRACKS).sort((a,b)=>(b==='kampung')-(a==='kampung')).forEach(k => sel.add(new Option(k, k)));
+document.getElementById('p').onclick = () => { A.setMusicOn(true); A.unlock(); A.music(null); A.music(sel.value); };
+document.getElementById('s').onclick = () => A.music(null);
+</script></body></html>
