@@ -603,7 +603,7 @@
     hideOverlays();
     clearInput();
     syncPause();
-    if (Audio) Audio.music('padang');
+    if (Audio) Audio.music(mapId === 'kampung' ? 'kampung' : 'padang');
   }
 
   function returnHome() {

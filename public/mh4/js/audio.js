@@ -71,7 +71,15 @@
 
   // ---------- Lagu ----------
   const D8 = 'k . h . s . h . ';
+  const MOTIF = 'C5 E5 G5 - E5 D5 C5';
   const TRACKS = {
+    // Kampung: C mayor, 116 bpm, 16 birama (~33 detik), berulang mulus. Motif MOTIF (birama 1)
+    // dimainkan ulang di birama 15; lagu lain bisa memakainya sebagai tanda pengenal.
+    kampung: { bpm: 116, leadType: 'square', harmType: 'square',
+      lead: 'C5 E5 G5 - E5 D5 C5 . A4 C5 E5 - D5 C5 A4 . A4 C5 F5 - E5 D5 C5 A4 B4 D5 G5 - F5 E5 D5 . C5 E5 G5 - C6 B5 G5 E5 A5 - E5 C5 D5 E5 C5 . F5 - A5 G5 F5 E5 D5 C5 D5 . G5 - F5 E5 D5 . F5 - A5 - C6 - A5 F5 G5 - B5 - D6 - B5 G5 E5 - G5 - B5 - G5 E5 A5 - C6 - B5 A5 G5 E5 A4 C5 F5 - E5 D5 C5 A4 B4 D5 G5 - F5 E5 D5 B4 C5 E5 G5 - E5 D5 C5 . E5 - D5 - G4 B4 D5 .',
+      harm: 'E4 G4 C5 G4 E4 G4 C5 G4 E4 A4 C5 A4 E4 A4 C5 A4 F4 A4 C5 A4 F4 A4 C5 A4 D4 G4 B4 G4 D4 G4 B4 G4 E4 G4 C5 G4 E4 G4 C5 G4 E4 A4 C5 A4 E4 A4 C5 A4 F4 A4 C5 A4 F4 A4 C5 A4 D4 G4 B4 G4 D4 G4 B4 G4 F4 A4 C5 A4 F4 A4 C5 A4 D4 G4 B4 G4 D4 G4 B4 G4 E4 G4 B4 G4 E4 G4 B4 G4 E4 A4 C5 A4 E4 A4 C5 A4 F4 A4 C5 A4 F4 A4 C5 A4 D4 G4 B4 G4 D4 G4 B4 G4 E4 G4 C5 G4 E4 G4 C5 G4 E4 G4 C5 G4 E4 G4 C5 G4',
+      bass: 'C3 . G3 . C3 . G3 . A2 . E3 . A2 . E3 . F2 . C3 . F2 . C3 . G2 . D3 . G2 . D3 . C3 . G3 . C3 . G3 . A2 . E3 . A2 . E3 . F2 . C3 . F2 . C3 . G2 . D3 . G2 . D3 . F2 . C3 . F2 . C3 . G2 . D3 . G2 . D3 . E2 . B2 . E2 . B2 . A2 . E3 . A2 . E3 . F2 . C3 . F2 . C3 . G2 . D3 . G2 . D3 . C3 . G3 . C3 . G3 . C3 . G3 . C3 . G3 .',
+      drums: 'k . h . s . h . k . h . s . h . k . h . s . h . k . h . s . h h k . h . s . h . k . h . s . h . k . h . s . h . k . h . s . h h k . h . s . h . k . h . s . h . k . h . s . h . k . h . s . h h k . h . s . h . k . h . s . h . k . h . s . h . k . s . k s k s' },
     padang: { bpm: 120, lead: 'F5 . A5 C6 A5 . G5 F5 G5 . A5 . F5 . . . F5 . A5 C6 D6 . C6 A5 G5 . E5 . F5 . . .',
       bass: 'F3 . C3 . F3 . C3 . C3 . G3 . F3 . C3 . F3 . C3 . Bb2 . F3 . C3 . G3 . F3 . . .', drums: D8.repeat(4), leadType: 'square' },
     kota: { bpm: 128, lead: 'D5 F#5 A5 . F#5 . D5 E5 . G5 . E5 C#5 . D5 . B4 D5 F#5 . A5 . G5 F#5 E5 . C#5 . D5 . . .',
@@ -95,7 +103,7 @@
     mulai: { bpm: 240, lead: 'G4 C5 E5 G5 C6 - .', bass: 'C3 . G3 . C3 - .' },
   };
   const parse = (s) => s.trim().split(/\s+/);
-  for (const t of Object.values(TRACKS)) { t.L = parse(t.lead); t.B = parse(t.bass); t.D = parse(t.drums || ''); }
+  for (const t of Object.values(TRACKS)) { t.L = parse(t.lead); t.B = parse(t.bass); t.D = parse(t.drums || ''); t.H = t.harm ? parse(t.harm) : []; }
   for (const t of Object.values(JINGLES)) { t.L = parse(t.lead); t.B = parse(t.bass); }
 
   // Tema level -> lagu. Tema tak dikenal memakai 'padang'.
@@ -114,6 +122,8 @@
       const i = step % cur.L.length;
       const ln = cur.L[i], bn = cur.B[i % cur.B.length], dn = cur.D.length ? cur.D[i % cur.D.length] : '.';
       if (ln !== '.' && ln !== '-') tone(freq(ln), nextAt, stepDur * len(cur.L, i) * 0.92, cur.leadType || 'square', cur.leadType === 'sawtooth' ? 0.05 : cur.leadType === 'sine' ? 0.13 : 0.075, musicBus);
+      const hn = cur.H.length ? cur.H[i % cur.H.length] : '.';
+      if (hn !== '.' && hn !== '-') tone(freq(hn), nextAt, stepDur * 0.8, cur.harmType || 'square', 0.04, musicBus);
       if (bn && bn !== '.' && bn !== '-') tone(freq(bn), nextAt, stepDur * len(cur.B, i % cur.B.length) * 0.9, 'triangle', 0.16, musicBus);
       if (dn === 'k') tone(150, nextAt, 0.12, 'sine', 0.35, musicBus, 45);
       else if (dn === 's') noise(nextAt, 0.1, 0.18, musicBus, 1800);
@@ -188,7 +198,7 @@
 
   return {
     unlock, music, jingle, sfx, setPaused, setMusicOn, setSfxOn, trackForTheme,
-    TRACKS, JINGLES, SFX_NAMES, THEME_TRACK,
+    TRACKS, JINGLES, SFX_NAMES, THEME_TRACK, MOTIF,
     get prefs() { return prefs; },
     get track() { return curName; },
   };
